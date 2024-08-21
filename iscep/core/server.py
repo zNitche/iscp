@@ -1,8 +1,8 @@
 import socket
 import threading
 import selectors
-import time
 from iscep.logger import Logger
+from iscep import communication
 
 
 class Server:
@@ -49,12 +49,10 @@ class Server:
 
         try:
             with conn:
-                data = conn.recv(1024)
-                # for now simulate processing
-                time.sleep(5)
+                packet = communication.load_packet(conn)
 
-                if data:
-                    conn.sendall(data)
+                if packet:
+                    conn.sendall(packet.dump())
 
         except:
             self.__error_logger.exception(f"error while processing request, addr: {addr}, thread: {cur_thread.name}")
@@ -72,7 +70,7 @@ class Server:
                 if ready:
                     try:
                         conn, addr = self.__socket.accept()
-                        self.__access_logger.debug(f"connection from {addr}")
+                        self.__access_logger.info(f"connection from {addr}")
 
                         if len(self.__threads) < self.threads_cap - 1:
                             thread = threading.Thread(target=self.__handle_request, args=(conn, addr))
@@ -80,7 +78,6 @@ class Server:
 
                             self.__threads.append(thread)
                             thread.start()
-
                         else:
                             conn.close()
                     except:

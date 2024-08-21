@@ -1,4 +1,4 @@
-from iscep import Server
+from iscep.core import Server
 
 
 if __name__ == "__main__":
