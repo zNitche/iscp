@@ -1,24 +1,35 @@
 import hashlib
 import json
+from enum import Enum
+from iscep import communication
+
+
+class PacketType(Enum):
+    SEND_CMD = 0
+    CLOSE_CONNECTION = 1
 
 
 class Packet:
-    def __init__(self, body: dict[str, str | int | None]):
+    def __init__(self, body: dict[str, object], ptype: PacketType = PacketType.SEND_CMD):
+        self.ptype = ptype
         self.body = body
 
     @staticmethod
     def load(buff: bytes):
         buff_size = len(buff)
 
-        if buff_size <= 32:
-            raise Exception(f"packet buff size too small, expected ath least 32 bytes, got {buff_size}")
-
         # 32 bytes = length of md5 hash
+        # 4 bytes = packet type
+
+        if buff_size <= 36:
+            raise Exception(f"packet buff size too small, expected ath least 36 bytes, got {buff_size}")
+
+        packet_type = communication.int_from_bytes(buff[:4])
+
         body_size = buff_size - 32
+        body = buff[4:body_size]
 
-        body = buff[:body_size]
         packet_checksum = buff[body_size:].decode()
-
         body_checksum = hashlib.md5(body).hexdigest()
 
         if not body_checksum == packet_checksum:
@@ -26,13 +37,14 @@ class Packet:
 
         body = json.loads(body.decode())
 
-        return Packet(body=body)
+        return Packet(body=body, ptype=PacketType(packet_type))
 
     def dump(self) -> bytes:
         body_buff = json.dumps(self.body).encode()
         checksum = hashlib.md5(body_buff).hexdigest().encode()
+        type = communication.int_to_bytes(self.ptype.value)
 
-        content = body_buff + checksum
-        size = len(content).to_bytes(length=4, byteorder="big")
+        content = type + body_buff + checksum
+        size = communication.int_to_bytes(len(content))
 
         return size + content
