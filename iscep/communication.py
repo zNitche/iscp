@@ -19,4 +19,4 @@ def load_packet(conn: socket.socket) -> Packet | None:
         return None
 
     packet_data = receive(conn, size)
-    return Packet.load(size, packet_data)
+    return Packet.load(packet_data)

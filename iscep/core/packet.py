@@ -7,9 +7,14 @@ class Packet:
         self.body = body
 
     @staticmethod
-    def load(size: int, buff: bytes):
+    def load(buff: bytes):
+        buff_size = len(buff)
+
+        if buff_size <= 32:
+            raise Exception(f"packet buff size too small, expected ath least 32 bytes, got {buff_size}")
+
         # 32 bytes = length of md5 hash
-        body_size = size - 32
+        body_size = buff_size - 32
 
         body = buff[:body_size]
         packet_checksum = buff[body_size:].decode()
