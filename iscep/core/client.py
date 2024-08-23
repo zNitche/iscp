@@ -1,31 +1,44 @@
 import socket
-import threading
 from iscep import communication
 from iscep.core import Packet
+from iscep.logger import Logger
 
 
-def client(ip, port, packet):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect((ip, port))
+class Client:
+    def __init__(self, addr: str, port: int, timeout: int = 10, debug: bool = False):
+        self.addr = addr
+        self.port = port
 
-        sock.sendall(packet.dump())
+        self.debug = debug
 
-        p = communication.load_packet(sock)
-        if p:
-            print(f"Received {p.body}")
+        self.__logger = Logger(debug=debug)
+
+        self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__socket.settimeout(timeout)
+
+    def __enter__(self):
+        self.__socket.connect((self.addr, self.port))
+        self.__logger.debug(f"connected to {self.addr}:{self.port}")
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.__socket.close()
+        self.__logger.debug(f"disconnected from {self.addr}:{self.port}")
+
+    def send_command(self, command: str) -> Packet | None:
+        packet = Packet(body={
+            "command": command,
+        })
+
+        self.__socket.sendall(packet.dump())
+        res = communication.load_packet(self.__socket)
+
+        return res
 
 
 if __name__ == '__main__':
-    addr = "127.0.0.1"
-    port = 8989
+    with Client(addr="127.0.0.1", port=8989, debug=True) as client:
+        response = client.send_command("test_cmd")
 
-    for i in range(5):
-        data = {
-            "test": i,
-            "test2": True
-        }
-
-        packet = Packet(body=data)
-
-        t = threading.Thread(target=client, args=(addr, port, packet))
-        t.start()
+        print(response.body)
