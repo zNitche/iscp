@@ -1,7 +1,10 @@
 import socket
 from iscep import communication
 from iscep.core import Packet
+from iscep.core import PacketType
 from iscep.logger import Logger
+
+import time
 
 
 class Client:
@@ -23,15 +26,25 @@ class Client:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.__send_close_connection_package()
+
         self.__socket.close()
         self.__logger.debug(f"disconnected from {self.addr}:{self.port}")
 
+    def __send_close_connection_package(self):
+        packet = Packet(body={}, ptype=PacketType.CLOSE_CONNECTION)
+        self.__socket.sendall(packet.dump())
+
     def send_command(self, command: str) -> Packet | None:
+        self.__logger.debug(f"sending cmd...")
+
         packet = Packet(body={
             "command": command,
-        })
+        }, ptype=PacketType.SEND_CMD)
 
         self.__socket.sendall(packet.dump())
+        self.__logger.debug(f"cmd has been sent, waiting for response...")
+
         res = communication.load_packet(self.__socket)
 
         return res
@@ -40,5 +53,8 @@ class Client:
 if __name__ == '__main__':
     with Client(addr="127.0.0.1", port=8989, debug=True) as client:
         response = client.send_command("test_cmd")
+        time.sleep(10)
+        response2 = client.send_command("test_cmd2")
 
         print(response.body)
+        print(response2.body)
