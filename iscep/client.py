@@ -11,7 +11,7 @@ class Client:
 
         self.debug = debug
 
-        self.__logger = Logger(debug=debug)
+        self.__logger = Logger(debug=debug, logger_name="client_logger")
 
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__socket.settimeout(timeout)

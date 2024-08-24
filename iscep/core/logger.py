@@ -62,7 +62,7 @@ class Logger:
         format = "%Y-%m-%d %H:%M:%S" if with_day else "%H:%M:%S"
 
         formatter = logging.Formatter(
-            "{asctime} - {levelname} - {message}",
+            "{asctime} - {name} - {levelname} - {message}",
             style="{",
             datefmt=format,
         )
