@@ -1,7 +1,7 @@
 import hashlib
 import json
 from enum import Enum
-from iscep import communication
+from iscep.utils import communication
 
 
 class PacketType(Enum):

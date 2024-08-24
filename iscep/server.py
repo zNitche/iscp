@@ -2,8 +2,8 @@ import socket
 import threading
 import selectors
 import time
-from iscep.logger import Logger
-from iscep import communication
+from iscep.core.logger import Logger
+from iscep.utils import communication
 
 
 class Server:

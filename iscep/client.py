@@ -1,10 +1,7 @@
 import socket
-from iscep import communication
-from iscep.core import Packet
-from iscep.core import PacketType
-from iscep.logger import Logger
-
-import time
+from iscep.utils import communication
+from iscep.core.packet import Packet, PacketType
+from iscep.core.logger import Logger
 
 
 class Client:
@@ -51,10 +48,12 @@ class Client:
 
 
 if __name__ == '__main__':
+    import time
+
     with Client(addr="127.0.0.1", port=8989, debug=True) as client:
         response = client.send_command("test_cmd")
         time.sleep(10)
         response2 = client.send_command("test_cmd2")
 
-        print(response.body)
-        print(response2.body)
+        print(f"r1: {response.body}")
+        print(f"r2: {response2.body}")
