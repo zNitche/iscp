@@ -48,3 +48,6 @@ class Packet:
         size = communication.int_to_bytes(len(content))
 
         return size + content
+
+    def __str__(self):
+        return f"{self.ptype.name} {self.body}"

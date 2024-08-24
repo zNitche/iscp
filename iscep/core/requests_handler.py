@@ -4,6 +4,7 @@ import selectors
 import time
 from iscep.utils import communication
 from iscep.core.packet import PacketType
+from iscep.core.logger import Logger
 
 
 class RequestsHandler:
@@ -18,6 +19,8 @@ class RequestsHandler:
 
         self.__poll_interval = poll_interval
         self.__timeout = timeout
+
+        self.__logger = Logger(logger_name=f"requests_handler_logger_{thread.native_id}")
 
     def handle(self):
         selector = selectors.PollSelector()
@@ -34,6 +37,8 @@ class RequestsHandler:
                     packet = communication.load_packet(self.__connection)
 
                     if packet:
+                        self.__logger.info(f"received packet: {packet}")
+
                         if packet.ptype == PacketType.CLOSE_CONNECTION:
                             break
 

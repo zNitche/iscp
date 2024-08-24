@@ -11,7 +11,8 @@ class Server:
                  port: int = 8989,
                  poll_interval: float = 0.5,
                  timeout: int = 5,
-                 thread_timeout: int = 120,
+                 thread_timeout: int = 10,
+                 thread_socket_timeout: int = 120,
                  threads_cap: int = 4,
                  logs_path: str | None = None,
                  debug: bool = False):
@@ -21,6 +22,7 @@ class Server:
 
         self.timeout = timeout
         self.thread_timeout = thread_timeout
+        self.thread_socket_timeout = thread_socket_timeout
         self.poll_interval = poll_interval
 
         self.debug = debug
@@ -52,7 +54,7 @@ class Server:
         try:
             handler = RequestsHandler(connection=conn,
                                       thread=cur_thread,
-                                      timeout=self.timeout,
+                                      timeout=self.thread_timeout,
                                       poll_interval=self.poll_interval)
             handler.handle()
 
@@ -61,7 +63,7 @@ class Server:
 
         finally:
             self.__threads.remove(cur_thread)
-            self.__logger.info(f"closed connection with: {addr}, thread: {cur_thread.name}")
+            self.__logger.info(f"closed connection with: {addr}, thread: {cur_thread.name} / {cur_thread.native_id}")
 
     def __mainloop(self):
         with self.__selector as selector:
@@ -77,7 +79,7 @@ class Server:
 
                         if len(self.__threads) < self.threads_cap - 1:
                             # just in case request handler fail became stuck somehow
-                            conn.settimeout(self.thread_timeout)
+                            conn.settimeout(self.thread_socket_timeout)
 
                             thread = threading.Thread(target=self.__handle_request, args=(conn, addr))
                             self.__logger.info(f"starting request handler: {thread.name}")

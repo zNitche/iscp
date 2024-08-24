@@ -11,10 +11,10 @@ class Logger:
                  debug: bool = False,
                  logger_name: str | None = None):
 
-        self.logs_path = self.__set_logs_path(logs_filename, logs_path)
         self.debug_mode = debug
         self.backup_count = backup_count
 
+        self.logs_path = self.__set_logs_path(logs_filename, logs_path)
         self.__logger = logging.getLogger(__name__ if logger_name is None else logger_name)
 
         self.__setup()
