@@ -1,9 +1,8 @@
 import socket
 import threading
 import selectors
-import time
 from iscep.core.logger import Logger
-from iscep.utils import communication
+from iscep.core.requests_handler import RequestsHandler
 
 
 class Server:
@@ -12,6 +11,7 @@ class Server:
                  port: int = 8989,
                  poll_interval: float = 0.5,
                  timeout: int = 5,
+                 thread_timeout: int = 120,
                  threads_cap: int = 4,
                  logs_path: str | None = None,
                  debug: bool = False):
@@ -20,6 +20,7 @@ class Server:
         self.port = port
 
         self.timeout = timeout
+        self.thread_timeout = thread_timeout
         self.poll_interval = poll_interval
 
         self.debug = debug
@@ -47,37 +48,19 @@ class Server:
 
     def __handle_request(self, conn: socket.socket, addr: str):
         cur_thread = threading.current_thread()
-        selector = selectors.PollSelector()
-        last_action_time = 0
 
         try:
-            with conn:
-                selector.register(conn, selectors.EVENT_READ)
-                ready = selector.select(self.poll_interval)
-
-                while True:
-                    current_loop_time = time.time()
-
-                    if ready:
-                        packet = communication.load_packet(conn)
-
-                        if packet:
-                            if packet.ptype.value == 1:
-                                break
-
-                            conn.sendall(packet.dump())
-
-                        last_action_time = time.time()
-
-                    if last_action_time - current_loop_time >= self.timeout:
-                        break
+            handler = RequestsHandler(connection=conn,
+                                      thread=cur_thread,
+                                      timeout=self.timeout,
+                                      poll_interval=self.poll_interval)
+            handler.handle()
 
         except:
             self.__error_logger.exception(f"error while processing request, addr: {addr}, thread: {cur_thread.name}")
 
         finally:
             self.__threads.remove(cur_thread)
-            selector.close()
             self.__logger.info(f"closed connection with: {addr}, thread: {cur_thread.name}")
 
     def __mainloop(self):
@@ -93,6 +76,9 @@ class Server:
                         self.__access_logger.info(f"connection from {addr}")
 
                         if len(self.__threads) < self.threads_cap - 1:
+                            # just in case request handler fail became stuck somehow
+                            conn.settimeout(self.thread_timeout)
+
                             thread = threading.Thread(target=self.__handle_request, args=(conn, addr))
                             self.__logger.info(f"starting request handler: {thread.name}")
 
