@@ -78,5 +78,8 @@ class Logger:
     def info(self, message: str):
         self.__logger.info(message)
 
+    def warning(self, message: str):
+        self.__logger.warning(message)
+
     def debug(self, message: str):
         self.__logger.debug(message)
