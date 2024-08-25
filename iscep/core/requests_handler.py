@@ -4,7 +4,7 @@ import selectors
 import time
 from iscep.utils import communication
 from iscep.core.packet import PacketType
-from iscep.core.logger import Logger
+from iscep.utils.logger import Logger
 
 
 class RequestsHandler:

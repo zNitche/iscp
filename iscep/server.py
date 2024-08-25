@@ -1,7 +1,7 @@
 import socket
 import threading
 import selectors
-from iscep.core.logger import Logger
+from iscep.utils.logger import Logger
 from iscep.core.requests_handler import RequestsHandler
 
 
