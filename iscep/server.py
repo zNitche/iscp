@@ -1,6 +1,7 @@
 import socket
 import threading
 import selectors
+import os
 from iscep.utils.logger import Logger
 from iscep.core.requests_handler import RequestsHandler
 
@@ -15,7 +16,8 @@ class Server:
                  thread_socket_timeout: int = 120,
                  threads_cap: int = 4,
                  logs_path: str | None = None,
-                 debug: bool = False):
+                 debug: bool = False,
+                 auth_tokens_path: str | None = None):
 
         self.address = address
         self.port = port
@@ -25,6 +27,7 @@ class Server:
         self.thread_socket_timeout = thread_socket_timeout
         self.poll_interval = poll_interval
 
+        self.auth_tokens_path = auth_tokens_path
         self.debug = debug
 
         self.threads_cap = threads_cap
@@ -34,9 +37,9 @@ class Server:
         self.__selector = selectors.PollSelector()
 
         self.__logger = Logger(logger_name="server_logger", debug=debug)
-        self.__access_logger = Logger(logger_name="socket_server_access_logger",
+        self.__access_logger = Logger(logger_name="server_access_logger",
                                       logs_path=logs_path, logs_filename="access.log")
-        self.__error_logger = Logger(logger_name="socket_server_error_logger",
+        self.__error_logger = Logger(logger_name="server_error_logger",
                                      logs_path=logs_path, logs_filename="error.log")
 
     def __setup_socket(self):
@@ -52,9 +55,8 @@ class Server:
         cur_thread = threading.current_thread()
 
         try:
-            handler = RequestsHandler(auth_token="123",
+            handler = RequestsHandler(auth_tokens_path=self.auth_tokens_path,
                                       connection=conn,
-                                      thread=cur_thread,
                                       timeout=self.thread_timeout,
                                       poll_interval=self.poll_interval)
             handler.handle()
@@ -94,6 +96,14 @@ class Server:
 
     def run(self):
         self.__setup_socket()
+
+        if self.auth_tokens_path:
+            if os.path.exists(self.auth_tokens_path):
+                self.__logger.info(f"only authenticated Packets will be accepted")
+            else:
+                self.auth_tokens_path = None
+                self.__logger.warning("auth tokens file doesn't exist, all packets will be accepted")
+
         self.__mainloop()
 
     def stop(self):

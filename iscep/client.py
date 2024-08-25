@@ -1,7 +1,7 @@
 import socket
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
-from iscep.core.packet_body import PacketBody
+from iscep.type_classes.packet_body import PacketBody
 from iscep.utils.logger import Logger
 
 
@@ -9,7 +9,7 @@ class Client:
     def __init__(self,
                  addr: str,
                  port: int,
-                 auth_token: str,
+                 auth_token: str | None = None,
                  timeout: int = 10,
                  debug: bool = False):
         self.addr = addr
@@ -59,10 +59,13 @@ class Client:
 
 if __name__ == '__main__':
     import time
+    import os
 
-    with Client(addr="127.0.0.1", port=8989, debug=True, auth_token="123") as client:
+    auth_token = os.getenv("AUTH_TOKEN", None)
+
+    with Client(addr="127.0.0.1", port=8989, debug=True, auth_token=auth_token) as client:
         response = client.send_command("test_cmd")
-        time.sleep(4)
+        time.sleep(5)
         response2 = client.send_command("test_cmd2")
 
         client.send_command("test_cmd non auth", non_auth=True)
