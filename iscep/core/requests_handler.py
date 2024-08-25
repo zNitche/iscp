@@ -3,16 +3,18 @@ import threading
 import selectors
 import time
 from iscep.utils import communication
-from iscep.core.packet import PacketType
+from iscep.core.packet import PacketType, Packet
 from iscep.utils.logger import Logger
 
 
 class RequestsHandler:
     def __init__(self,
+                 auth_token: str,
                  connection: socket.socket,
                  thread: threading.Thread,
                  timeout: int = 5,
                  poll_interval: float = 0.5):
+        self.auth_token = auth_token
 
         self.__thread = thread
         self.__connection = connection
@@ -21,6 +23,12 @@ class RequestsHandler:
         self.__timeout = timeout
 
         self.__logger = Logger(logger_name=f"requests_handler_logger_{thread.native_id}")
+
+    def __is_authenticated(self, packet: Packet) -> bool:
+        if packet.body.auth_token and packet.body.auth_token == self.auth_token:
+            return True
+
+        return False
 
     def handle(self):
         selector = selectors.PollSelector()
@@ -38,6 +46,8 @@ class RequestsHandler:
 
                     if packet:
                         self.__logger.info(f"received packet: {packet}")
+                        if not self.__is_authenticated(packet):
+                            raise Exception("packet is not authenticated!")
 
                         if packet.ptype == PacketType.CLOSE_CONNECTION:
                             break

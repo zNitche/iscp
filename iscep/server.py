@@ -52,7 +52,8 @@ class Server:
         cur_thread = threading.current_thread()
 
         try:
-            handler = RequestsHandler(connection=conn,
+            handler = RequestsHandler(auth_token="123",
+                                      connection=conn,
                                       thread=cur_thread,
                                       timeout=self.thread_timeout,
                                       poll_interval=self.poll_interval)

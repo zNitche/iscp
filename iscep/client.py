@@ -1,13 +1,21 @@
 import socket
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
+from iscep.core.packet_body import PacketBody
 from iscep.utils.logger import Logger
 
 
 class Client:
-    def __init__(self, addr: str, port: int, timeout: int = 10, debug: bool = False):
+    def __init__(self,
+                 addr: str,
+                 port: int,
+                 auth_token: str,
+                 timeout: int = 10,
+                 debug: bool = False):
         self.addr = addr
         self.port = port
+
+        self.auth_token = auth_token
 
         self.debug = debug
 
@@ -29,15 +37,17 @@ class Client:
         self.__logger.debug(f"disconnected from {self.addr}:{self.port}")
 
     def __send_close_connection_package(self):
-        packet = Packet(body={}, ptype=PacketType.CLOSE_CONNECTION)
+        pbody = PacketBody(auth_token=self.auth_token, body={})
+        packet = Packet(body=pbody, ptype=PacketType.CLOSE_CONNECTION)
         self.__socket.sendall(packet.dump())
 
-    def send_command(self, command: str) -> Packet | None:
+    def send_command(self, command: str, non_auth: bool = False) -> Packet | None:
         self.__logger.debug(f"sending cmd...")
 
-        packet = Packet(body={
-            "command": command,
-        }, ptype=PacketType.SEND_CMD)
+        auth_token = self.auth_token if not non_auth else None
+        pbody = PacketBody(auth_token=auth_token, body={"command": command})
+
+        packet = Packet(body=pbody, ptype=PacketType.SEND_CMD)
 
         self.__socket.sendall(packet.dump())
         self.__logger.debug(f"cmd has been sent, waiting for response...")
@@ -50,10 +60,12 @@ class Client:
 if __name__ == '__main__':
     import time
 
-    with Client(addr="127.0.0.1", port=8989, debug=True) as client:
+    with Client(addr="127.0.0.1", port=8989, debug=True, auth_token="123") as client:
         response = client.send_command("test_cmd")
         time.sleep(4)
         response2 = client.send_command("test_cmd2")
+
+        client.send_command("test_cmd non auth", non_auth=True)
 
         print(f"r1: {response.body}")
         print(f"r2: {response2.body}")

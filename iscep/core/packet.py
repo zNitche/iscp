@@ -2,6 +2,7 @@ import hashlib
 import json
 from enum import Enum
 from iscep.utils import communication
+from iscep.core.packet_body import PacketBody
 
 
 class PacketType(Enum):
@@ -10,7 +11,7 @@ class PacketType(Enum):
 
 
 class Packet:
-    def __init__(self, body: dict[str, object], ptype: PacketType = PacketType.SEND_CMD):
+    def __init__(self, body: PacketBody, ptype: PacketType = PacketType.SEND_CMD):
         self.ptype = ptype
         self.body = body
 
@@ -35,12 +36,12 @@ class Packet:
         if not body_checksum == packet_checksum:
             raise Exception(f"packet checksum missmatch, expected: '{packet_checksum}' got '{body_checksum}'")
 
-        body = json.loads(body.decode())
+        body = PacketBody(**json.loads(body.decode()))
 
         return Packet(body=body, ptype=PacketType(packet_type))
 
     def dump(self) -> bytes:
-        body_buff = json.dumps(self.body).encode()
+        body_buff = json.dumps(self.body.__dict__).encode()
         checksum = hashlib.md5(body_buff).hexdigest().encode()
         type = communication.int_to_bytes(self.ptype.value)
 
