@@ -40,7 +40,7 @@ class RequestsHandler:
 
         with self.__connection:
             selector.register(self.__connection, selectors.EVENT_READ)
-            ready = selector.select(0)
+            ready = selector.select(self.__poll_interval)
 
             while True:
                 current_loop_time = time.time()
