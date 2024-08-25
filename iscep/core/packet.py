@@ -2,7 +2,7 @@ import hashlib
 import json
 from enum import Enum
 from iscep.utils import communication
-from iscep.core.packet_body import PacketBody
+from iscep.type_classes.packet_body import PacketBody
 
 
 class PacketType(Enum):
