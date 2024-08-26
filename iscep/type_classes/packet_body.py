@@ -3,8 +3,9 @@ from dataclasses import dataclass
 
 @dataclass
 class PacketBody:
-    auth_token: str
+    auth_token: str | None
     body: dict[str, object]
 
     def __str__(self):
-        return f"is auth: {self.auth_token is not None} {self.body}"
+        auth_token = f'{self.auth_token[:5]}...' if self.auth_token is not None else None
+        return f"auth: {auth_token} {self.body}"

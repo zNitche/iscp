@@ -28,13 +28,14 @@ class Server:
         self.poll_interval = poll_interval
 
         self.auth_tokens_path = auth_tokens_path
+        self.require_auth = False
         self.debug = debug
 
         self.threads_cap = threads_cap
         self.__threads: list[threading.Thread] = []
 
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__selector = selectors.PollSelector()
+        self.__selector = selectors.PollSelector
 
         self.__logger = Logger(logger_name="server_logger", debug=debug)
         self.__access_logger = Logger(logger_name="server_access_logger",
@@ -55,7 +56,8 @@ class Server:
         cur_thread = threading.current_thread()
 
         try:
-            handler = RequestsHandler(auth_tokens_path=self.auth_tokens_path,
+            handler = RequestsHandler(require_auth=self.require_auth,
+                                      auth_tokens_path=self.auth_tokens_path,
                                       connection=conn,
                                       timeout=self.thread_timeout,
                                       poll_interval=self.poll_interval)
@@ -69,7 +71,7 @@ class Server:
             self.__logger.info(f"closed connection with: {addr}, thread: {cur_thread.name} / {cur_thread.native_id}")
 
     def __mainloop(self):
-        with self.__selector as selector:
+        with self.__selector() as selector:
             selector.register(self.__socket, selectors.EVENT_READ)
 
             while True:
@@ -81,7 +83,7 @@ class Server:
                         self.__access_logger.info(f"connection from {addr}")
 
                         if len(self.__threads) < self.threads_cap - 1:
-                            # just in case request handler fail became stuck somehow
+                            # just in case request handler became stuck somehow
                             conn.settimeout(self.thread_socket_timeout)
 
                             thread = threading.Thread(target=self.__handle_request, args=(conn, addr))
@@ -99,9 +101,9 @@ class Server:
 
         if self.auth_tokens_path:
             if os.path.exists(self.auth_tokens_path):
+                self.require_auth = True
                 self.__logger.info(f"only authenticated Packets will be accepted")
             else:
-                self.auth_tokens_path = None
                 self.__logger.warning("auth tokens file doesn't exist, all packets will be accepted")
 
         self.__mainloop()
