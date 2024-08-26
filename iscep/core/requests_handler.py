@@ -75,4 +75,5 @@ class RequestsHandler:
                     break
 
     def __process(self, packet: Packet) -> Packet:
+        # processing goes here, for now its only packet echo
         return packet

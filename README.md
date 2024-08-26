@@ -9,3 +9,7 @@ To be written soon...
 ```
 python3 tokens_management.py  --remove test
 ```
+
+```
+openssl req -x509 -newkey rsa:2048 -nodes -out cert.pem -keyout key.pem -days 365
+```

@@ -2,6 +2,7 @@ import socket
 import threading
 import selectors
 import os
+import ssl
 from iscep.utils.logger import Logger
 from iscep.core.requests_handler import RequestsHandler
 
@@ -17,7 +18,9 @@ class Server:
                  threads_cap: int = 4,
                  logs_path: str | None = None,
                  debug: bool = False,
-                 auth_tokens_path: str | None = None):
+                 auth_tokens_path: str | None = None,
+                 ssl_cert_file: str | None = None,
+                 ssl_key_file: str | None = None):
 
         self.address = address
         self.port = port
@@ -27,7 +30,12 @@ class Server:
         self.thread_socket_timeout = thread_socket_timeout
         self.poll_interval = poll_interval
 
-        self.auth_tokens_path = auth_tokens_path
+        self.__auth_tokens_path = auth_tokens_path
+        self.__ssl_cert_file = ssl_cert_file
+        self.__ssl_key_file = ssl_key_file
+
+        self.__ssl_context: ssl.SSLContext | None = None
+
         self.require_auth = False
         self.debug = debug
 
@@ -44,6 +52,14 @@ class Server:
                                      logs_path=logs_path, logs_filename="error.log")
 
     def __setup_socket(self):
+        if self.__ssl_cert_file and self.__ssl_key_file:
+            if os.path.exists(self.__ssl_key_file) and os.path.exists(self.__ssl_cert_file):
+                self.__ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                self.__ssl_context.load_cert_chain(certfile=self.__ssl_cert_file, keyfile=self.__ssl_key_file)
+
+                self.__socket = self.__ssl_context.wrap_socket(self.__socket, server_side=True)
+                self.__logger.info(f"SSL has been enabled")
+
         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.__socket.settimeout(self.timeout)
 
@@ -57,7 +73,7 @@ class Server:
 
         try:
             handler = RequestsHandler(require_auth=self.require_auth,
-                                      auth_tokens_path=self.auth_tokens_path,
+                                      auth_tokens_path=self.__auth_tokens_path,
                                       connection=conn,
                                       timeout=self.thread_timeout,
                                       poll_interval=self.poll_interval)
@@ -99,8 +115,8 @@ class Server:
     def run(self):
         self.__setup_socket()
 
-        if self.auth_tokens_path:
-            if os.path.exists(self.auth_tokens_path):
+        if self.__auth_tokens_path:
+            if os.path.exists(self.__auth_tokens_path):
                 self.require_auth = True
                 self.__logger.info(f"only authenticated Packets will be accepted")
             else:
