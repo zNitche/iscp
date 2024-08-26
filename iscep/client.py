@@ -1,4 +1,5 @@
 import socket
+import ssl
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
 from iscep.type_classes.packet_body import PacketBody
@@ -11,7 +12,9 @@ class Client:
                  port: int,
                  auth_token: str | None = None,
                  timeout: int = 10,
-                 debug: bool = False):
+                 debug: bool = False,
+                 ssl_cert_file: str | None = None):
+
         self.addr = addr
         self.port = port
 
@@ -19,12 +22,17 @@ class Client:
 
         self.debug = debug
 
+        self.__ssl_cert_file = ssl_cert_file
+        self.__ssl_context: ssl.SSLContext | None = None
+
         self.__logger = Logger(debug=debug, logger_name="client_logger")
 
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__socket.settimeout(timeout)
 
     def __enter__(self):
+        self.__setup_ssl()
+
         self.__socket.connect((self.addr, self.port))
         self.__logger.debug(f"connected to {self.addr}:{self.port}")
 
@@ -35,6 +43,16 @@ class Client:
 
         self.__socket.close()
         self.__logger.debug(f"disconnected from {self.addr}:{self.port}")
+
+    def __setup_ssl(self):
+        if self.__ssl_cert_file and os.path.exists(self.__ssl_cert_file):
+            self.__ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            self.__ssl_context.load_verify_locations(self.__ssl_cert_file)
+            self.__ssl_context.check_hostname = False
+
+            self.__socket = self.__ssl_context.wrap_socket(self.__socket)
+
+            self.__logger.debug(f"SSL has been enabled")
 
     def __send_close_connection_package(self):
         pbody = PacketBody(auth_token=self.auth_token, body={})
@@ -63,7 +81,7 @@ if __name__ == '__main__':
 
     auth_token = os.getenv("AUTH_TOKEN", None)
 
-    with Client(addr="127.0.0.1", port=8989, debug=True, auth_token=auth_token) as client:
+    with Client(addr="127.0.0.1", port=8989, debug=True, auth_token=auth_token, ssl_cert_file="../cert.pem") as client:
         response = client.send_command("test_cmd")
         time.sleep(5)
         response2 = client.send_command("test_cmd2")
