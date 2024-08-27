@@ -1,5 +1,6 @@
 import socket
 import ssl
+import os
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
 from iscep.type_classes.packet_body import PacketBody
@@ -80,21 +81,3 @@ class Client:
 
         except Exception as e:
             self.__logger.debug(f"error while sending command: {str(e)}")
-
-
-if __name__ == '__main__':
-    import time
-    import os
-
-    auth_token = os.getenv("AUTH_TOKEN", None)
-
-    with Client(addr="127.0.0.1", port=8989, debug=True, auth_token=auth_token, ssl_cert_file="../cert.pem") as client:
-        response = client.send_command("test_cmd")
-        # time.sleep(5)
-        response2 = client.send_command("test_cmd2")
-
-        response3 = client.send_command("test_cmd non auth", non_auth=True)
-
-        print(f"r1: {response}")
-        print(f"r2: {response2}")
-        print(f"r3: {response3}")

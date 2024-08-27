@@ -2,6 +2,9 @@
 requires = ["setuptools==70.0.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+exclude = ["examples"]
+
 [project]
 name = "iscep"
 version = "0.0.0"
