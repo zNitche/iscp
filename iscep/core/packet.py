@@ -7,13 +7,16 @@ from iscep.type_classes.packet_body import PacketBody
 
 class PacketType(Enum):
     SEND_CMD = 0
-    CLOSE_CONNECTION = 1
+    CMD_RESPONSE = 1
+    CLOSE_CONNECTION = 2
+    UNAUTHORIZED = 3
+    ERROR = 4
 
 
 class Packet:
-    def __init__(self, body: PacketBody, ptype: PacketType = PacketType.SEND_CMD):
+    def __init__(self, body: PacketBody = None, ptype: PacketType = PacketType.SEND_CMD):
         self.ptype = ptype
-        self.body = body
+        self.body = body if body is not None else PacketBody(body=None, auth_token=None)
 
     @staticmethod
     def load(buff: bytes):

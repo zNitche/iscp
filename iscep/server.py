@@ -123,7 +123,7 @@ class Server:
         if self.__auth_tokens_path:
             if os.path.exists(self.__auth_tokens_path):
                 self.require_auth = True
-                self.__logger.info(f"only authenticated Packets will be accepted")
+                self.__logger.info(f"only authenticated Packets will be processed")
             else:
                 self.__logger.warning("auth tokens file doesn't exist, all packets will be accepted")
 

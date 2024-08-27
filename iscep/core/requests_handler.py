@@ -74,14 +74,9 @@ class RequestsHandler:
                     packet = communication.load_packet(self.__connection)
 
                     if packet:
-                        self.__logger.info(f"received packet")
-
-                        if not self.__check_auth(packet):
-                            continue
-
                         self.__logger.info(f"processing packet {packet}...")
 
-                        response_packet = self.__process(packet)
+                        response_packet = self.__process_packet(packet)
                         if response_packet:
                             self.__connection.sendall(response_packet.dump())
 
@@ -92,9 +87,17 @@ class RequestsHandler:
                 if current_loop_time - last_action_time >= self.__timeout:
                     break
 
-    def __process(self, packet: Packet) -> Packet | None:
-        if packet.ptype == PacketType.CLOSE_CONNECTION:
-            self.requested_shutdown = True
-            return None
+    def __process_packet(self, packet: Packet) -> Packet | None:
+        if not self.__check_auth(packet):
+            return Packet(ptype=PacketType.UNAUTHORIZED)
 
-        return packet
+        match packet.ptype:
+            case PacketType.CLOSE_CONNECTION:
+                self.requested_shutdown = True
+                return None
+
+            case PacketType.SEND_CMD:
+                # echo
+                return Packet(ptype=PacketType.CMD_RESPONSE, body=packet.body)
+
+        return Packet(ptype=PacketType.ERROR)
