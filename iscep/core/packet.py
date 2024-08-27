@@ -16,7 +16,7 @@ class PacketType(Enum):
 class Packet:
     def __init__(self, body: PacketBody = None, ptype: PacketType = PacketType.SEND_CMD):
         self.ptype = ptype
-        self.body = body if body is not None else PacketBody(body=None, auth_token=None)
+        self.body = body if body is not None else PacketBody()
 
     @staticmethod
     def load(buff: bytes):

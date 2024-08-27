@@ -4,6 +4,7 @@ import selectors
 import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
+from iscep.type_classes.packet_body import PacketBody
 from iscep.utils.logger import Logger
 
 
@@ -87,6 +88,12 @@ class RequestsHandler:
                 if current_loop_time - last_action_time >= self.__timeout:
                     break
 
+    def __process_cmd(self, packet: Packet) -> Packet:
+        try:
+            return Packet(ptype=PacketType.CMD_RESPONSE, body=packet.body)
+        except Exception as e:
+            return Packet(ptype=PacketType.ERROR, body=PacketBody(body={"error": str(e)}))
+
     def __process_packet(self, packet: Packet) -> Packet | None:
         if not self.__check_auth(packet):
             return Packet(ptype=PacketType.UNAUTHORIZED)
@@ -97,7 +104,6 @@ class RequestsHandler:
                 return None
 
             case PacketType.SEND_CMD:
-                # echo
-                return Packet(ptype=PacketType.CMD_RESPONSE, body=packet.body)
+                return self.__process_cmd(packet)
 
         return Packet(ptype=PacketType.ERROR)
