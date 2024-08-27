@@ -11,7 +11,7 @@ class Client:
                  addr: str,
                  port: int,
                  auth_token: str | None = None,
-                 timeout: int = 10,
+                 timeout: int = 5,
                  debug: bool = False,
                  ssl_cert_file: str | None = None):
 
@@ -39,7 +39,10 @@ class Client:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.__send_close_connection_package()
+        try:
+            self.__send_close_connection_package()
+        except:
+            self.__logger.exception("error while shutting down connection")
 
         self.__socket.close()
         self.__logger.debug(f"disconnected from {self.addr}:{self.port}")
@@ -57,6 +60,7 @@ class Client:
     def __send_close_connection_package(self):
         pbody = PacketBody(auth_token=self.auth_token, body={})
         packet = Packet(body=pbody, ptype=PacketType.CLOSE_CONNECTION)
+
         self.__socket.sendall(packet.dump())
 
     def send_command(self, command: str, non_auth: bool = False) -> Packet | None:
@@ -64,15 +68,18 @@ class Client:
 
         auth_token = self.auth_token if not non_auth else None
         pbody = PacketBody(auth_token=auth_token, body={"command": command})
-
         packet = Packet(body=pbody, ptype=PacketType.SEND_CMD)
 
-        self.__socket.sendall(packet.dump())
-        self.__logger.debug(f"cmd has been sent, waiting for response...")
+        try:
+            self.__socket.sendall(packet.dump())
+            self.__logger.debug(f"cmd has been sent, waiting for response...")
 
-        res = communication.load_packet(self.__socket)
+            res = communication.load_packet(self.__socket)
 
-        return res
+            return res
+
+        except Exception as e:
+            self.__logger.debug(f"error while sending command: {str(e)}")
 
 
 if __name__ == '__main__':
@@ -83,7 +90,7 @@ if __name__ == '__main__':
 
     with Client(addr="127.0.0.1", port=8989, debug=True, auth_token=auth_token, ssl_cert_file="../cert.pem") as client:
         response = client.send_command("test_cmd")
-        time.sleep(5)
+        # time.sleep(5)
         response2 = client.send_command("test_cmd2")
 
         client.send_command("test_cmd non auth", non_auth=True)

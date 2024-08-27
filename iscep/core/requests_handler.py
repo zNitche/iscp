@@ -3,7 +3,7 @@ import threading
 import selectors
 import time
 from iscep.utils import communication, auth
-from iscep.core.packet import PacketType, Packet
+from iscep.core.packet import Packet, PacketType
 from iscep.utils.logger import Logger
 
 
@@ -26,6 +26,8 @@ class RequestsHandler:
         self.__poll_interval = poll_interval
         self.__timeout = timeout
 
+        self.requested_shutdown = False
+
         self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}")
 
     def __is_authenticated(self, packet: Packet) -> tuple[str | None, bool]:
@@ -40,13 +42,31 @@ class RequestsHandler:
 
         return None, False
 
+    def __check_auth(self, packet: Packet) -> bool:
+        if self.require_auth:
+            token_owner, is_authenticated = self.__is_authenticated(packet)
+            if not is_authenticated:
+                self.__logger.info(f"received unauthorized packet, skipping...")
+
+                return False
+
+        return True
+
     def handle(self):
+        self.__connection_loop()
+
+        try:
+            self.__connection.shutdown(socket.SHUT_RDWR)
+        except:
+            self.__logger.exception("error while shutting down socket connection")
+
+    def __connection_loop(self):
         last_action_time = 0
 
         with self.__selector() as selector:
             selector.register(self.__connection, selectors.EVENT_READ)
 
-            while self.__connection:
+            while self.__connection and not self.requested_shutdown:
                 ready = selector.select(self.__poll_interval)
                 current_loop_time = time.time()
 
@@ -56,24 +76,25 @@ class RequestsHandler:
                     if packet:
                         self.__logger.info(f"received packet")
 
-                        if self.require_auth:
-                            token_owner, is_authenticated = self.__is_authenticated(packet)
-                            if not is_authenticated:
-                                raise Exception("packet is not authenticated!")
+                        if not self.__check_auth(packet):
+                            continue
 
-                        self.__logger.info(f"processing packet {packet} by {token_owner}...")
-
-                        if packet.ptype == PacketType.CLOSE_CONNECTION:
-                            break
+                        self.__logger.info(f"processing packet {packet}...")
 
                         response_packet = self.__process(packet)
-                        self.__connection.sendall(response_packet.dump())
+                        if response_packet:
+                            self.__connection.sendall(response_packet.dump())
 
-                    last_action_time = time.time()
+                        last_action_time = time.time()
+                    else:
+                        break
 
                 if current_loop_time - last_action_time >= self.__timeout:
                     break
 
-    def __process(self, packet: Packet) -> Packet:
-        # processing goes here, for now its only packet echo
+    def __process(self, packet: Packet) -> Packet | None:
+        if packet.ptype == PacketType.CLOSE_CONNECTION:
+            self.requested_shutdown = True
+            return None
+
         return packet

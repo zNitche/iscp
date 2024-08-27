@@ -52,13 +52,7 @@ class Server:
                                      logs_path=logs_path, logs_filename="error.log")
 
     def __setup_socket(self):
-        if self.__ssl_cert_file and self.__ssl_key_file:
-            if os.path.exists(self.__ssl_key_file) and os.path.exists(self.__ssl_cert_file):
-                self.__ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-                self.__ssl_context.load_cert_chain(certfile=self.__ssl_cert_file, keyfile=self.__ssl_key_file)
-
-                self.__socket = self.__ssl_context.wrap_socket(self.__socket, server_side=True)
-                self.__logger.info(f"SSL has been enabled")
+        self.__setup_ssl()
 
         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.__socket.settimeout(self.timeout)
@@ -67,6 +61,15 @@ class Server:
         self.__socket.listen()
 
         self.__logger.info(f"Server listening on {self.address}:{self.port}")
+
+    def __setup_ssl(self):
+        if self.__ssl_cert_file and self.__ssl_key_file:
+            if os.path.exists(self.__ssl_key_file) and os.path.exists(self.__ssl_cert_file):
+                self.__ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                self.__ssl_context.load_cert_chain(certfile=self.__ssl_cert_file, keyfile=self.__ssl_key_file)
+
+                self.__socket = self.__ssl_context.wrap_socket(self.__socket, server_side=True)
+                self.__logger.info(f"SSL has been enabled")
 
     def __handle_request(self, conn: socket.socket, addr: str):
         cur_thread = threading.current_thread()
@@ -83,6 +86,8 @@ class Server:
             self.__error_logger.exception(f"error while processing request, addr: {addr}, thread: {cur_thread.name}")
 
         finally:
+            conn.close()
+
             self.__threads.remove(cur_thread)
             self.__logger.info(f"closed connection with: {addr}, thread: {cur_thread.name} / {cur_thread.native_id}")
 
