@@ -75,9 +75,14 @@ class RequestsHandler:
                     if packet:
                         self.__logger.info(f"processing packet {packet}...")
 
-                        response_packet = self.__process_packet(packet)
-                        if response_packet:
-                            self.__connection.sendall(response_packet.dump())
+                        try:
+                            response_packet = self.__process_packet(packet)
+                            if response_packet:
+                                self.__connection.sendall(response_packet.dump())
+
+                        except:
+                            self.__logger.exception("error while processing package")
+                            self.__connection.sendall(Packet.get_error_package().dump())
 
                         last_action_time = time.time()
 
@@ -87,12 +92,6 @@ class RequestsHandler:
 
                 if current_loop_time - last_action_time >= self.__timeout:
                     break
-
-    def __process_cmd(self, packet: Packet) -> Packet:
-        try:
-            return Packet(type=PacketType.CMD_RESPONSE, content=packet.content)
-        except Exception as e:
-            return Packet.get_error_package(str(e))
 
     def __process_packet(self, packet: Packet) -> Packet | None:
         if not self.__check_auth(packet):
@@ -107,3 +106,6 @@ class RequestsHandler:
                 return self.__process_cmd(packet)
 
         return Packet.get_error_package()
+
+    def __process_cmd(self, packet: Packet) -> Packet:
+        return Packet(type=PacketType.CMD_RESPONSE, content=packet.content)

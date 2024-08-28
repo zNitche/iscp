@@ -85,7 +85,7 @@ class Server:
             handler.handle()
 
         except:
-            self.__error_logger.exception(f"error while processing request, addr: {addr}, thread: {cur_thread.name}")
+            self.__error_logger.exception(f"error while processing connection, addr: {addr}, thread: {cur_thread.name}")
 
         finally:
             conn.close()
@@ -117,7 +117,7 @@ class Server:
                         else:
                             conn.close()
                     except:
-                        self.__error_logger.exception("error while handling request")
+                        self.__error_logger.exception("error while handling connection")
 
     def run(self):
         self.__setup_socket()
