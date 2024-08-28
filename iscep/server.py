@@ -45,6 +45,8 @@ class Server:
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__selector = selectors.PollSelector
 
+        self.requested_shutdown = False
+
         self.__logger = Logger(logger_name="server_logger", debug=debug)
         self.__access_logger = Logger(logger_name="server_access_logger",
                                       logs_path=logs_path, logs_filename="access.log")
@@ -95,7 +97,7 @@ class Server:
         with self.__selector() as selector:
             selector.register(self.__socket, selectors.EVENT_READ)
 
-            while True:
+            while not self.requested_shutdown:
                 ready = selector.select(self.poll_interval)
 
                 if ready:
@@ -130,7 +132,12 @@ class Server:
         self.__mainloop()
 
     def stop(self):
+        self.requested_shutdown = True
+
+        self.__socket.shutdown(socket.SHUT_RDWR)
         self.__socket.close()
 
         for thread in self.__threads:
             thread.join()
+
+        self.__logger.info(f"server has been stopped successfully")
