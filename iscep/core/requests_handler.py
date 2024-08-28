@@ -4,7 +4,6 @@ import selectors
 import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
-from iscep.type_classes.packet_body import PacketBody
 from iscep.utils.logger import Logger
 
 
@@ -48,7 +47,6 @@ class RequestsHandler:
             token_owner, is_authenticated = self.__is_authenticated(packet)
             if not is_authenticated:
                 self.__logger.info(f"received unauthorized packet, skipping...")
-
                 return False
 
         return True
@@ -82,7 +80,9 @@ class RequestsHandler:
                             self.__connection.sendall(response_packet.dump())
 
                         last_action_time = time.time()
+
                     else:
+                        # stop processing if client closed connection
                         break
 
                 if current_loop_time - last_action_time >= self.__timeout:
@@ -90,15 +90,15 @@ class RequestsHandler:
 
     def __process_cmd(self, packet: Packet) -> Packet:
         try:
-            return Packet(ptype=PacketType.CMD_RESPONSE, body=packet.body)
+            return Packet(type=PacketType.CMD_RESPONSE, body=packet.body)
         except Exception as e:
-            return Packet(ptype=PacketType.ERROR, body=PacketBody(body={"error": str(e)}))
+            return Packet.get_error_package(str(e))
 
     def __process_packet(self, packet: Packet) -> Packet | None:
         if not self.__check_auth(packet):
-            return Packet(ptype=PacketType.UNAUTHORIZED)
+            return Packet(type=PacketType.UNAUTHORIZED)
 
-        match packet.ptype:
+        match packet.type:
             case PacketType.CLOSE_CONNECTION:
                 self.requested_shutdown = True
                 return None
@@ -106,4 +106,4 @@ class RequestsHandler:
             case PacketType.SEND_CMD:
                 return self.__process_cmd(packet)
 
-        return Packet(ptype=PacketType.ERROR)
+        return Packet.get_error_package()

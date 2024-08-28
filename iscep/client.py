@@ -60,7 +60,7 @@ class Client:
 
     def __send_close_connection_package(self):
         pbody = PacketBody(auth_token=self.auth_token, body={})
-        packet = Packet(body=pbody, ptype=PacketType.CLOSE_CONNECTION)
+        packet = Packet(body=pbody, type=PacketType.CLOSE_CONNECTION)
 
         self.__socket.sendall(packet.dump())
 
@@ -69,7 +69,7 @@ class Client:
 
         auth_token = self.auth_token if not non_auth else None
         pbody = PacketBody(auth_token=auth_token, body={"command": command})
-        packet = Packet(body=pbody, ptype=PacketType.SEND_CMD)
+        packet = Packet(body=pbody, type=PacketType.SEND_CMD)
 
         try:
             self.__socket.sendall(packet.dump())

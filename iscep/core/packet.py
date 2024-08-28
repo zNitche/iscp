@@ -14,8 +14,8 @@ class PacketType(Enum):
 
 
 class Packet:
-    def __init__(self, body: PacketBody = None, ptype: PacketType = PacketType.SEND_CMD):
-        self.ptype = ptype
+    def __init__(self, body: PacketBody = None, type: PacketType = PacketType.SEND_CMD):
+        self.type = type
         self.body = body if body is not None else PacketBody()
 
     @staticmethod
@@ -41,17 +41,22 @@ class Packet:
 
         body = PacketBody(**json.loads(body.decode()))
 
-        return Packet(body=body, ptype=PacketType(packet_type))
+        return Packet(body=body, type=PacketType(packet_type))
 
     def dump(self) -> bytes:
         body_buff = json.dumps(self.body.__dict__).encode()
         checksum = hashlib.md5(body_buff).hexdigest().encode()
-        type = communication.int_to_bytes(self.ptype.value)
+        type = communication.int_to_bytes(self.type.value)
 
         content = type + body_buff + checksum
         size = communication.int_to_bytes(len(content))
 
         return size + content
 
+    @staticmethod
+    def get_error_package(message: str | None = None):
+        body = PacketBody(body={"error": message} if message is not None else None)
+        return Packet(type=PacketType.ERROR, body=body)
+
     def __str__(self):
-        return f"{self.ptype.name} {self.body}"
+        return f"{self.type.name} {self.body}"
