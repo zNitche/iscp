@@ -11,4 +11,4 @@ def test_cmd_echo_auth(auth_client: Client, auth_server):
     res = auth_client.send_command(cmd)
 
     assert res.type == PacketType.CMD_RESPONSE
-    assert res.body.body == {"command": cmd}
+    assert res.content.body == {"command": cmd}

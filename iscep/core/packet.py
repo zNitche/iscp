@@ -2,7 +2,7 @@ import hashlib
 import json
 from enum import Enum
 from iscep.utils import communication
-from iscep.type_classes.packet_body import PacketBody
+from iscep.type_classes.packet_content import PacketContent
 
 
 class PacketType(Enum):
@@ -14,9 +14,9 @@ class PacketType(Enum):
 
 
 class Packet:
-    def __init__(self, body: PacketBody = None, type: PacketType = PacketType.SEND_CMD):
+    def __init__(self, content: PacketContent = None, type: PacketType = PacketType.SEND_CMD):
         self.type = type
-        self.body = body if body is not None else PacketBody()
+        self.content = content if content is not None else PacketContent()
 
     @staticmethod
     def load(buff: bytes):
@@ -39,12 +39,12 @@ class Packet:
         if not body_checksum == packet_checksum:
             raise Exception(f"packet checksum missmatch, expected: '{packet_checksum}' got '{body_checksum}'")
 
-        body = PacketBody(**json.loads(body.decode()))
+        content = PacketContent(**json.loads(body.decode()))
 
-        return Packet(body=body, type=PacketType(packet_type))
+        return Packet(content=content, type=PacketType(packet_type))
 
     def dump(self) -> bytes:
-        body_buff = json.dumps(self.body.__dict__).encode()
+        body_buff = json.dumps(self.content.__dict__).encode()
         checksum = hashlib.md5(body_buff).hexdigest().encode()
         type = communication.int_to_bytes(self.type.value)
 
@@ -55,8 +55,8 @@ class Packet:
 
     @staticmethod
     def get_error_package(message: str | None = None):
-        body = PacketBody(body={"error": message} if message is not None else None)
-        return Packet(type=PacketType.ERROR, body=body)
+        content = PacketContent(body={"error": message} if message is not None else None)
+        return Packet(type=PacketType.ERROR, content=content)
 
     def __str__(self):
-        return f"{self.type.name} {self.body}"
+        return f"{self.type.name} {self.content}"

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class PacketBody:
+class PacketContent:
     auth_token: str | None = None
     body: dict[str, object] | None = None
 

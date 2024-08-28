@@ -31,7 +31,7 @@ class RequestsHandler:
         self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}")
 
     def __is_authenticated(self, packet: Packet) -> tuple[str | None, bool]:
-        packet_token = packet.body.auth_token
+        packet_token = packet.content.auth_token
 
         if packet_token:
             tokens = auth.get_tokens(self.auth_tokens_path)
@@ -90,7 +90,7 @@ class RequestsHandler:
 
     def __process_cmd(self, packet: Packet) -> Packet:
         try:
-            return Packet(type=PacketType.CMD_RESPONSE, body=packet.body)
+            return Packet(type=PacketType.CMD_RESPONSE, content=packet.content)
         except Exception as e:
             return Packet.get_error_package(str(e))
 

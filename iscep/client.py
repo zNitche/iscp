@@ -3,7 +3,7 @@ import ssl
 import os
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
-from iscep.type_classes.packet_body import PacketBody
+from iscep.type_classes.packet_content import PacketContent
 from iscep.utils.logger import Logger
 
 
@@ -59,8 +59,8 @@ class Client:
             self.__logger.debug(f"SSL has been enabled")
 
     def __send_close_connection_package(self):
-        pbody = PacketBody(auth_token=self.auth_token, body={})
-        packet = Packet(body=pbody, type=PacketType.CLOSE_CONNECTION)
+        content = PacketContent(auth_token=self.auth_token, body={})
+        packet = Packet(content=content, type=PacketType.CLOSE_CONNECTION)
 
         self.__socket.sendall(packet.dump())
 
@@ -68,8 +68,8 @@ class Client:
         self.__logger.debug(f"sending cmd...")
 
         auth_token = self.auth_token if not non_auth else None
-        pbody = PacketBody(auth_token=auth_token, body={"command": command})
-        packet = Packet(body=pbody, type=PacketType.SEND_CMD)
+        content = PacketContent(auth_token=auth_token, body={"command": command})
+        packet = Packet(content=content, type=PacketType.SEND_CMD)
 
         try:
             self.__socket.sendall(packet.dump())

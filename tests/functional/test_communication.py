@@ -7,4 +7,4 @@ def test_cmd_echo(client: Client, server):
     res = client.send_command(cmd)
 
     assert res.type == PacketType.CMD_RESPONSE
-    assert res.body.body == {"command": cmd}
+    assert res.content.body == {"command": cmd}
