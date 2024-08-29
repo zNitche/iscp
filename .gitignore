@@ -1,5 +1,8 @@
 .idea
 __pycache__/
 logs/
+iscep.egg-info/
+dist/
+.pytest_cache/
 tokens.json
 *.pem

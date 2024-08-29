@@ -17,3 +17,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -out cert.pem -keyout key.pem -days 36
 ```
 pytest -v tests/
 ```
+
+```
+python3 -m build
+```
