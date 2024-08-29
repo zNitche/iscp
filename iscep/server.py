@@ -20,15 +20,20 @@ class Server:
                  debug: bool = False,
                  auth_tokens_path: str | None = None,
                  ssl_cert_file: str | None = None,
-                 ssl_key_file: str | None = None):
+                 ssl_key_file: str | None = None,
+                 logging_enabled: bool = True):
 
         self.address = address
         self.port = port
+
+        self.logging_enabled = logging_enabled
 
         self.timeout = timeout
         self.thread_timeout = thread_timeout
         self.thread_socket_timeout = thread_socket_timeout
         self.poll_interval = poll_interval
+
+        self.requests_handler: type(RequestsHandler) = RequestsHandler
 
         self.__auth_tokens_path = auth_tokens_path
         self.__ssl_cert_file = ssl_cert_file
@@ -47,11 +52,13 @@ class Server:
 
         self.requested_shutdown = False
 
-        self.__logger = Logger(logger_name="server_logger", debug=debug)
+        self.__logger = Logger(logger_name="server_logger", debug=debug, enabled=logging_enabled)
         self.__access_logger = Logger(logger_name="server_access_logger",
-                                      logs_path=logs_path, logs_filename="access.log")
+                                      logs_path=logs_path, logs_filename="access.log",
+                                      enabled=logging_enabled)
         self.__error_logger = Logger(logger_name="server_error_logger",
-                                     logs_path=logs_path, logs_filename="error.log")
+                                     logs_path=logs_path, logs_filename="error.log",
+                                     enabled=logging_enabled)
 
     def __setup_socket(self):
         self.__setup_ssl()
@@ -77,11 +84,12 @@ class Server:
         cur_thread = threading.current_thread()
 
         try:
-            handler = RequestsHandler(require_auth=self.require_auth,
-                                      auth_tokens_path=self.__auth_tokens_path,
-                                      connection=conn,
-                                      timeout=self.thread_timeout,
-                                      poll_interval=self.poll_interval)
+            handler = self.requests_handler(require_auth=self.require_auth,
+                                            auth_tokens_path=self.__auth_tokens_path,
+                                            connection=conn,
+                                            timeout=self.thread_timeout,
+                                            poll_interval=self.poll_interval,
+                                            logging_enabled=self.logging_enabled)
             handler.handle()
 
         except:
