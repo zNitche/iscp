@@ -7,17 +7,20 @@ class Logger:
     def __init__(self,
                  logs_filename: str | None = None,
                  logs_path: str | None = None,
-                 backup_count: int = 7,
+                 backup_log_files_count: int = 7,
                  debug: bool = False,
-                 logger_name: str | None = None):
+                 logger_name: str | None = None,
+                 enabled: bool = True):
 
         self.debug_mode = debug
-        self.backup_count = backup_count
+
+        self.backup_log_files_count = backup_log_files_count
 
         self.logs_path = self.__set_logs_path(logs_filename, logs_path)
         self.__logger = logging.getLogger(__name__ if logger_name is None else logger_name)
 
-        self.__setup()
+        if enabled:
+            self.__setup()
 
     def __set_logs_path(self, filename: str | None, path: str | None) -> str | None:
         if filename is None or path is None:
@@ -53,7 +56,7 @@ class Logger:
         file_handler = TimedRotatingFileHandler(filename=self.logs_path,
                                                 when="midnight",
                                                 encoding="utf-8",
-                                                backupCount=self.backup_count)
+                                                backupCount=self.backup_log_files_count)
         file_handler.setFormatter(formatter)
 
         self.__logger.addHandler(file_handler)
