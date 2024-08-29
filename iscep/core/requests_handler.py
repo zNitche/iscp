@@ -13,7 +13,8 @@ class RequestsHandler:
                  require_auth: bool = False,
                  auth_tokens_path: str | None = None,
                  timeout: int = 5,
-                 poll_interval: float = 0.5):
+                 poll_interval: float = 0.5,
+                 logging_enabled: bool = True):
 
         self.require_auth = require_auth
         self.auth_tokens_path = auth_tokens_path
@@ -28,7 +29,8 @@ class RequestsHandler:
 
         self.requested_shutdown = False
 
-        self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}")
+        self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}",
+                               enabled=logging_enabled)
 
     def __is_authenticated(self, packet: Packet) -> tuple[str | None, bool]:
         packet_token = packet.content.auth_token
@@ -70,25 +72,25 @@ class RequestsHandler:
                 current_loop_time = time.time()
 
                 if ready:
-                    packet = communication.load_packet(self.__connection)
+                    try:
+                        packet = communication.load_packet(self.__connection)
 
-                    if packet:
-                        self.__logger.info(f"processing packet {packet}...")
+                        if packet:
+                            self.__logger.info(f"processing packet {packet}...")
 
-                        try:
                             response_packet = self.__process_packet(packet)
                             if response_packet:
                                 self.__connection.sendall(response_packet.dump())
 
-                        except:
-                            self.__logger.exception("error while processing package")
-                            self.__connection.sendall(Packet.get_error_package().dump())
+                            last_action_time = time.time()
 
-                        last_action_time = time.time()
+                        else:
+                            # stop processing if client closed connection
+                            break
 
-                    else:
-                        # stop processing if client closed connection
-                        break
+                    except:
+                        self.__logger.exception("error while processing package")
+                        self.__connection.sendall(Packet.get_error_package().dump())
 
                 if current_loop_time - last_action_time >= self.__timeout:
                     break
