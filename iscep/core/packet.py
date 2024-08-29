@@ -6,11 +6,12 @@ from iscep.type_classes.packet_content import PacketContent
 
 
 class PacketType(Enum):
-    SEND_CMD = 0
-    CMD_RESPONSE = 1
-    CLOSE_CONNECTION = 2
-    UNAUTHORIZED = 3
-    ERROR = 4
+    ECHO = 0
+    SEND_CMD = 1
+    CMD_RESPONSE = 2
+    CLOSE_CONNECTION = 3
+    UNAUTHORIZED = 4
+    ERROR = 5
 
 
 class Packet:

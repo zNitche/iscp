@@ -40,10 +40,7 @@ class Client:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
-            self.__send_close_connection_package()
-        except:
-            self.__logger.exception("error while shutting down connection")
+        self.__send_close_connection_packet()
 
         self.__socket.close()
         self.__logger.debug(f"disconnected from {self.addr}:{self.port}")
@@ -58,11 +55,21 @@ class Client:
 
             self.__logger.debug(f"SSL has been enabled")
 
-    def __send_close_connection_package(self):
+    def __send_close_connection_packet(self):
+        self.__logger.debug(f"sending close connection packet...")
+
         content = PacketContent(auth_token=self.auth_token, body={})
         packet = Packet(content=content, type=PacketType.CLOSE_CONNECTION)
 
-        self.__socket.sendall(packet.dump())
+        self.__send_packet(packet)
+
+    def send_echo(self, message: str) -> Packet | None:
+        self.__logger.debug(f"echo...")
+
+        content = PacketContent(auth_token=self.auth_token, body={"echo": message})
+        packet = Packet(content=content, type=PacketType.ECHO)
+
+        return self.__send_packet(packet)
 
     def send_command(self, command: str, non_auth: bool = False) -> Packet | None:
         self.__logger.debug(f"sending cmd...")
@@ -71,13 +78,18 @@ class Client:
         content = PacketContent(auth_token=auth_token, body={"command": command})
         packet = Packet(content=content, type=PacketType.SEND_CMD)
 
+        return self.__send_packet(packet)
+
+    def __send_packet(self, packet: Packet) -> Packet | None:
+        response = None
+
         try:
             self.__socket.sendall(packet.dump())
-            self.__logger.debug(f"cmd has been sent, waiting for response...")
+            self.__logger.debug(f"packet has been sent...")
 
-            res = communication.load_packet(self.__socket)
-
-            return res
+            response = communication.load_packet(self.__socket)
 
         except Exception as e:
             self.__logger.debug(f"error while sending command: {str(e)}")
+
+        return response

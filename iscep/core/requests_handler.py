@@ -104,6 +104,9 @@ class RequestsHandler:
                 self.requested_shutdown = True
                 return None
 
+            case PacketType.ECHO:
+                return packet
+
             case PacketType.SEND_CMD:
                 return self.__process_cmd(packet)
 
