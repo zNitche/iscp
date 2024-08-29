@@ -5,7 +5,7 @@ from iscep import Server, Client
 
 def start_server(auth_enabled: bool = False) -> tuple[Server, threading.Thread]:
     tokens_path = utils.get_tokens_path() if auth_enabled else None
-    server = Server(auth_tokens_path=tokens_path)
+    server = Server(auth_tokens_path=tokens_path, logging_enabled=False)
 
     thread = threading.Thread(target=server.run)
     thread.start()
