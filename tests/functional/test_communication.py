@@ -3,8 +3,7 @@ from iscep.core.packet import PacketType
 
 
 def test_cmd_echo(client: Client, server):
-    cmd = "test_cmd"
-    res = client.send_command(cmd)
+    res = client.send_echo("echo")
 
-    assert res.type == PacketType.CMD_RESPONSE
-    assert res.content.body == {"command": cmd}
+    assert res.type == PacketType.ECHO
+    assert res.content.body == {"echo": "echo"}
