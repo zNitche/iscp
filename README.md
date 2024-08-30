@@ -21,3 +21,7 @@ pytest -v tests/
 ```
 python3 -m build
 ```
+
+```
+python3 -m iscep.tokens_management --tokens-path tokens.json --add test
+```

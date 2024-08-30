@@ -1,18 +1,20 @@
 import argparse
 import os
-from iscep import auth_management
+from iscep.utils import auth
 
 
 def main(args):
+    print(f"auth tokens management, passed args: {args}")
+
     tokens_path: str = args.tokens_path
     add_token_owner: str = args.add
     remove_token_owner: str = args.remove
 
     if add_token_owner:
-        auth_management.add_token(add_token_owner, tokens_path)
+        auth.add_token(add_token_owner, tokens_path)
 
     elif remove_token_owner:
-        auth_management.remove_token(remove_token_owner, tokens_path)
+        auth.remove_token(remove_token_owner, tokens_path)
 
 
 def get_args():
