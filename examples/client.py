@@ -15,7 +15,7 @@ if __name__ == '__main__':
         response = client.send_command("test_cmd")
         # time.sleep(5)
         response2 = client.send_command("test_cmd2")
-        response3 = client.send_command("test_cmd non auth", non_auth=True)
+        response3 = client.send_command("test_cmd non auth", use_auth=False)
 
         print(f"r1: {response}")
         print(f"r2: {response2}")

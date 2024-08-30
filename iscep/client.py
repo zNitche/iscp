@@ -3,7 +3,7 @@ import ssl
 import os
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
-from iscep.type_classes.packet_content import PacketContent
+from iscep.type_classes.packet_content import PacketContent, CommandSection
 from iscep.utils.logger import Logger
 
 
@@ -58,27 +58,37 @@ class Client:
     def __send_close_connection_packet(self):
         self.__logger.debug(f"sending close connection packet...")
 
-        content = PacketContent(auth_token=self.auth_token, body={})
+        content = PacketContent(auth_token=self.auth_token)
         packet = Packet(content=content, type=PacketType.CLOSE_CONNECTION)
 
         self.__send_packet(packet)
 
     def send_echo(self, message: str) -> Packet | None:
-        self.__logger.debug(f"echo...")
+        self.__logger.debug(f"sending echo...")
 
-        content = PacketContent(auth_token=self.auth_token, body={"echo": message})
+        content = PacketContent(auth_token=self.auth_token, response={"echo": message})
         packet = Packet(content=content, type=PacketType.ECHO)
 
         return self.__send_packet(packet)
 
-    def send_command(self, command: str, non_auth: bool = False) -> Packet | None:
+    def send_command(self,
+                     name: str, args: dict[str, any] | None = None,
+                     use_auth: bool = True) -> tuple[PacketType, object | None] | None:
+
         self.__logger.debug(f"sending cmd...")
 
-        auth_token = self.auth_token if not non_auth else None
-        content = PacketContent(auth_token=auth_token, body={"command": command})
+        auth_token = self.auth_token if use_auth else None
+
+        command = CommandSection(name=name, args=args)
+        content = PacketContent(auth_token=auth_token, command=command)
         packet = Packet(content=content, type=PacketType.SEND_CMD)
 
-        return self.__send_packet(packet)
+        response = self.__send_packet(packet)
+
+        if response is None or response.content is None:
+            return None
+
+        return response.type, response.content.response
 
     def __send_packet(self, packet: Packet) -> Packet | None:
         response = None
@@ -90,6 +100,6 @@ class Client:
             response = communication.load_packet(self.__socket)
 
         except Exception as e:
-            self.__logger.debug(f"error while sending command: {str(e)}")
+            self.__logger.debug(f"error while sending packet: {str(e)}")
 
         return response

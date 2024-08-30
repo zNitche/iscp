@@ -4,17 +4,22 @@ import selectors
 import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
+from iscep.core.command import Command
 from iscep.utils.logger import Logger
 
 
 class RequestsHandler:
     def __init__(self,
                  connection: socket.socket,
+                 commands: dict[str, Command],
                  require_auth: bool = False,
                  auth_tokens_path: str | None = None,
                  timeout: int = 5,
                  poll_interval: float = 0.5,
-                 logging_enabled: bool = True):
+                 logging_enabled: bool = True,
+                 logs_path: str | None = None):
+
+        self.commands = commands
 
         self.require_auth = require_auth
         self.auth_tokens_path = auth_tokens_path
@@ -31,6 +36,11 @@ class RequestsHandler:
 
         self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}",
                                enabled=logging_enabled)
+
+        self.__commands_logger = Logger(logger_name=f"commands_logger_{self.__thread.native_id}",
+                                        enabled=logging_enabled,
+                                        logs_path=logs_path,
+                                        logs_filename="commands.log")
 
     def __is_authenticated(self, packet: Packet) -> tuple[str | None, bool]:
         packet_token = packet.content.auth_token
@@ -62,7 +72,7 @@ class RequestsHandler:
             self.__logger.exception("error while shutting down socket connection")
 
     def __connection_loop(self):
-        last_action_time = 0
+        last_action_time = time.time()
 
         with self.__selector() as selector:
             selector.register(self.__connection, selectors.EVENT_READ)
@@ -82,15 +92,15 @@ class RequestsHandler:
                             if response_packet:
                                 self.__connection.sendall(response_packet.dump())
 
-                            last_action_time = time.time()
-
                         else:
                             # stop processing if client closed connection
                             break
 
                     except:
-                        self.__logger.exception("error while processing package")
-                        self.__connection.sendall(Packet.get_error_package().dump())
+                        self.__logger.exception("error while processing packet")
+                        self.__connection.sendall(Packet.get_error_packet().dump())
+
+                    last_action_time = time.time()
 
                 if current_loop_time - last_action_time >= self.__timeout:
                     break
@@ -110,7 +120,17 @@ class RequestsHandler:
             case PacketType.SEND_CMD:
                 return self.__process_cmd(packet)
 
-        return Packet.get_error_package()
+        return Packet.get_error_packet()
 
     def __process_cmd(self, packet: Packet) -> Packet:
-        return Packet(type=PacketType.CMD_RESPONSE, content=packet.content)
+        self.__logger.info(f"executing command")
+        command = packet.get_command()
+
+        if command:
+            cmd_module = self.commands.get(command.name)
+
+            if cmd_module:
+                response = cmd_module.run(**command.args)
+                return Packet.get_cmd_response_packet(response)
+
+        return Packet.get_error_packet(f"command not found")

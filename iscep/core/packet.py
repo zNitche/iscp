@@ -2,7 +2,7 @@ import hashlib
 import json
 from enum import Enum
 from iscep.utils import communication
-from iscep.type_classes.packet_content import PacketContent
+from iscep.type_classes.packet_content import PacketContent, CommandSection
 
 
 class PacketType(Enum):
@@ -44,8 +44,23 @@ class Packet:
 
         return Packet(content=content, type=PacketType(packet_type))
 
+    def __serialize_content(self) -> str:
+        content_body = {**self.content.__dict__} if self.content else None
+        command_section = self.get_command()
+        command_body = {**command_section.__dict__} if command_section else None
+
+        content_body["command"] = None
+
+        output = {
+            **self.content.__dict__,
+            "command": command_body
+        }
+
+        return json.dumps(output)
+
     def dump(self) -> bytes:
-        body_buff = json.dumps(self.content.__dict__).encode()
+        body_buff = json.dumps(self.content, default=lambda o: o.__dict__ if o else None).encode()
+
         checksum = hashlib.md5(body_buff).hexdigest().encode()
         type = communication.int_to_bytes(self.type.value, length=2)
 
@@ -54,10 +69,22 @@ class Packet:
 
         return size + content
 
+    def get_command(self) -> CommandSection | None:
+        if self.content is None:
+            return None
+
+        command = getattr(self.content, "command", None)
+        return CommandSection(**command) if command else None
+
     @staticmethod
-    def get_error_package(message: str | None = None):
-        content = PacketContent(body={"error": message} if message is not None else None)
+    def get_error_packet(message: str | None = None):
+        content = PacketContent(response={"error": message} if message is not None else None)
         return Packet(type=PacketType.ERROR, content=content)
+
+    @staticmethod
+    def get_cmd_response_packet(response: any):
+        content = PacketContent(response=response)
+        return Packet(type=PacketType.CMD_RESPONSE, content=content)
 
     def __str__(self):
         return f"{self.type.name} {self.content}"

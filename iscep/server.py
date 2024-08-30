@@ -3,8 +3,10 @@ import threading
 import selectors
 import os
 import ssl
+import typing
 from iscep.utils.logger import Logger
 from iscep.core.requests_handler import RequestsHandler
+from iscep.core.command import Command
 
 
 class Server:
@@ -27,6 +29,7 @@ class Server:
         self.port = port
 
         self.logging_enabled = logging_enabled
+        self.logs_path = logs_path
 
         self.timeout = timeout
         self.thread_timeout = thread_timeout
@@ -47,18 +50,20 @@ class Server:
         self.threads_cap = threads_cap
         self.__threads: list[threading.Thread] = []
 
+        self.__commands: dict[str, Command] = {}
+
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__selector = selectors.PollSelector
 
         self.requested_shutdown = False
 
-        self.__logger = Logger(logger_name="server_logger", debug=debug, enabled=logging_enabled)
+        self.__logger = Logger(logger_name="server_logger", debug=debug, enabled=self.logging_enabled)
         self.__access_logger = Logger(logger_name="server_access_logger",
-                                      logs_path=logs_path, logs_filename="access.log",
-                                      enabled=logging_enabled)
+                                      logs_path=self.logs_path, logs_filename="access.log",
+                                      enabled=self.logging_enabled)
         self.__error_logger = Logger(logger_name="server_error_logger",
-                                     logs_path=logs_path, logs_filename="error.log",
-                                     enabled=logging_enabled)
+                                     logs_path=self.logs_path, logs_filename="error.log",
+                                     enabled=self.logging_enabled)
 
     def __setup_socket(self):
         self.__setup_ssl()
@@ -87,9 +92,11 @@ class Server:
             handler = self.requests_handler(require_auth=self.require_auth,
                                             auth_tokens_path=self.__auth_tokens_path,
                                             connection=conn,
+                                            commands=self.__commands,
                                             timeout=self.thread_timeout,
                                             poll_interval=self.poll_interval,
-                                            logging_enabled=self.logging_enabled)
+                                            logging_enabled=self.logging_enabled,
+                                            logs_path=self.logs_path)
             handler.handle()
 
         except:
@@ -149,3 +156,13 @@ class Server:
             thread.join()
 
         self.__logger.info(f"server has been stopped successfully")
+
+    def register_command(self, name: str, module: typing.Callable[[...], any]):
+        self.__commands[name] = Command(name=name, module=module)
+        self.__logger.info(f"command '{name}' has been registered...")
+
+    def unregister_command(self, name: str):
+        if name in self.__commands.keys():
+            del self.__commands[name]
+
+            self.__logger.info(f"command '{name}' has been unregistered...")
