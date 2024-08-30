@@ -23,16 +23,16 @@ class Packet:
     def load(buff: bytes):
         buff_size = len(buff)
 
-        # 32 bytes = length of md5 hash
-        # 4 bytes = packet type
+        hash_length = 32
+        packet_type_length = 2
 
-        if buff_size <= 36:
+        if buff_size <= hash_length + packet_type_length:
             raise Exception(f"packet buff size too small, expected ath least 36 bytes, got {buff_size}")
 
-        packet_type = communication.int_from_bytes(buff[:4])
+        packet_type = communication.int_from_bytes(buff[:packet_type_length])
 
-        body_size = buff_size - 32
-        body = buff[4:body_size]
+        body_size = buff_size - hash_length
+        body = buff[packet_type_length:body_size]
 
         packet_checksum = buff[body_size:].decode()
         body_checksum = hashlib.md5(body).hexdigest()
@@ -47,7 +47,7 @@ class Packet:
     def dump(self) -> bytes:
         body_buff = json.dumps(self.content.__dict__).encode()
         checksum = hashlib.md5(body_buff).hexdigest().encode()
-        type = communication.int_to_bytes(self.type.value)
+        type = communication.int_to_bytes(self.type.value, length=2)
 
         content = type + body_buff + checksum
         size = communication.int_to_bytes(len(content))
