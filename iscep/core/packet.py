@@ -3,6 +3,7 @@ import json
 from enum import Enum
 from iscep.utils import communication
 from iscep.type_classes.packet_content import PacketContent
+from iscep.type_classes.command import Command
 
 
 class PacketType(Enum):
@@ -44,6 +45,16 @@ class Packet:
 
         return Packet(content=content, type=PacketType(packet_type))
 
+    @staticmethod
+    def get_error_packet(message: str | None = None):
+        content = PacketContent(error=message if message is not None else None)
+        return Packet(type=PacketType.ERROR, content=content)
+
+    @staticmethod
+    def get_cmd_response_packet(response: any):
+        content = PacketContent(response=response)
+        return Packet(type=PacketType.CMD_RESPONSE, content=content)
+
     def dump(self) -> bytes:
         body = self.content.__dict__ if self.content else {}
         body_buff = json.dumps(body).encode()
@@ -56,15 +67,11 @@ class Packet:
 
         return size + content
 
-    @staticmethod
-    def get_error_packet(message: str | None = None):
-        content = PacketContent(error=message if message is not None else None)
-        return Packet(type=PacketType.ERROR, content=content)
+    def get_command(self) -> Command | None:
+        if self.content is None or self.content.command is None:
+            return None
 
-    @staticmethod
-    def get_cmd_response_packet(response: any):
-        content = PacketContent(response=response)
-        return Packet(type=PacketType.CMD_RESPONSE, content=content)
+        return Command(name=self.content.command, args=self.content.args)
 
     def __str__(self):
         return f"{self.type.name} {self.content}"
