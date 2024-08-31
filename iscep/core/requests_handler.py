@@ -124,13 +124,15 @@ class RequestsHandler:
 
     def __process_cmd(self, packet: Packet) -> Packet:
         self.__logger.info(f"executing command")
-        command = packet.get_command()
+        # command = packet.get_command()
+        #
+        # if command:
+        #     cmd_module = self.commands.get(command.name)
+        #
+        #     if cmd_module:
+        #         response = cmd_module.run(**command.args)
+        #         return Packet.get_cmd_response_packet(response)
+        #
+        # return Packet.get_error_packet(f"command not found")
 
-        if command:
-            cmd_module = self.commands.get(command.name)
-
-            if cmd_module:
-                response = cmd_module.run(**command.args)
-                return Packet.get_cmd_response_packet(response)
-
-        return Packet.get_error_packet(f"command not found")
+        return Packet.get_cmd_response_packet("res")

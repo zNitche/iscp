@@ -3,7 +3,7 @@ import ssl
 import os
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
-from iscep.type_classes.packet_content import PacketContent, CommandSection
+from iscep.type_classes.packet_content import PacketContent
 from iscep.utils.logger import Logger
 
 
@@ -79,8 +79,7 @@ class Client:
 
         auth_token = self.auth_token if use_auth else None
 
-        command = CommandSection(name=name, args=args)
-        content = PacketContent(auth_token=auth_token, command=command)
+        content = PacketContent(auth_token=auth_token, command=name, args=args)
         packet = Packet(content=content, type=PacketType.SEND_CMD)
 
         response = self.__send_packet(packet)

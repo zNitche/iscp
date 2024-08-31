@@ -2,17 +2,20 @@ from dataclasses import dataclass
 
 
 @dataclass
-class CommandSection:
-    name: str | None = None
-    args: dict[str, any] | None = None
-
-
-@dataclass
 class PacketContent:
     auth_token: str | None = None
-    command: CommandSection | None = None
+    command: str | None = None
+    args: dict[str, any] | None = None
+    error: str | None = None
     response: object | None = None
+
+    def __getattr__(self, item):
+        return getattr(self, item, None)
 
     def __str__(self):
         auth_token = f'{self.auth_token[:5]}...' if self.auth_token is not None else None
-        return f"auth: {auth_token} command: {self.command} response: {self.response}"
+
+        attr = self.__dict__.copy()
+        attr["auth_token"] = auth_token
+
+        return f"{attr}"

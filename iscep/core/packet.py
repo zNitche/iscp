@@ -2,7 +2,7 @@ import hashlib
 import json
 from enum import Enum
 from iscep.utils import communication
-from iscep.type_classes.packet_content import PacketContent, CommandSection
+from iscep.type_classes.packet_content import PacketContent
 
 
 class PacketType(Enum):
@@ -15,9 +15,9 @@ class PacketType(Enum):
 
 
 class Packet:
-    def __init__(self, content: PacketContent = None, type: PacketType = PacketType.SEND_CMD):
+    def __init__(self, content: PacketContent | None = None, type: PacketType = PacketType.SEND_CMD):
         self.type = type
-        self.content = content if content is not None else PacketContent()
+        self.content = content
 
     @staticmethod
     def load(buff: bytes):
@@ -44,22 +44,9 @@ class Packet:
 
         return Packet(content=content, type=PacketType(packet_type))
 
-    def __serialize_content(self) -> str:
-        content_body = {**self.content.__dict__} if self.content else None
-        command_section = self.get_command()
-        command_body = {**command_section.__dict__} if command_section else None
-
-        content_body["command"] = None
-
-        output = {
-            **self.content.__dict__,
-            "command": command_body
-        }
-
-        return json.dumps(output)
-
     def dump(self) -> bytes:
-        body_buff = json.dumps(self.content, default=lambda o: o.__dict__ if o else None).encode()
+        body = self.content.__dict__ if self.content else {}
+        body_buff = json.dumps(body).encode()
 
         checksum = hashlib.md5(body_buff).hexdigest().encode()
         type = communication.int_to_bytes(self.type.value, length=2)
@@ -69,16 +56,9 @@ class Packet:
 
         return size + content
 
-    def get_command(self) -> CommandSection | None:
-        if self.content is None:
-            return None
-
-        command = getattr(self.content, "command", None)
-        return CommandSection(**command) if command else None
-
     @staticmethod
     def get_error_packet(message: str | None = None):
-        content = PacketContent(response={"error": message} if message is not None else None)
+        content = PacketContent(error=message if message is not None else None)
         return Packet(type=PacketType.ERROR, content=content)
 
     @staticmethod
