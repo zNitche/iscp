@@ -10,7 +10,7 @@ class PacketContent:
     response: object | None = None
 
     def __getattr__(self, item):
-        return getattr(self, item, None)
+        return self.__dict__.get(item)
 
     def __str__(self):
         auth_token = f'{self.auth_token[:5]}...' if self.auth_token is not None else None
