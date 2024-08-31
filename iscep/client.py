@@ -4,6 +4,7 @@ import os
 from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
 from iscep.type_classes.packet_content import PacketContent
+from iscep.type_classes.command_response import CommandResponse
 from iscep.utils.logger import Logger
 
 
@@ -73,7 +74,7 @@ class Client:
 
     def send_command(self,
                      name: str, args: dict[str, any] | None = None,
-                     use_auth: bool = True) -> tuple[PacketType, object | None] | None:
+                     use_auth: bool = True) -> CommandResponse | None:
 
         self.__logger.debug(f"sending cmd...")
 
@@ -87,7 +88,7 @@ class Client:
         if response is None or response.content is None:
             return None
 
-        return response.type, response.content.response
+        return CommandResponse(type=response.type, response=response.content.response)
 
     def __send_packet(self, packet: Packet) -> Packet | None:
         response = None
