@@ -3,10 +3,9 @@ import threading
 import selectors
 import os
 import ssl
-import typing
 from iscep.utils.logger import Logger
 from iscep.core.requests_handler import RequestsHandler
-from iscep.core.command import Command
+from iscep.core.task import Task
 
 
 class Server:
@@ -50,7 +49,7 @@ class Server:
         self.threads_cap = threads_cap
         self.__threads: list[threading.Thread] = []
 
-        self.__commands: dict[str, Command] = {}
+        self.__tasks: dict[str, Task] = {}
 
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__selector = selectors.PollSelector
@@ -92,7 +91,7 @@ class Server:
             handler = self.requests_handler(require_auth=self.require_auth,
                                             auth_tokens_path=self.__auth_tokens_path,
                                             connection=conn,
-                                            commands=self.__commands,
+                                            tasks=self.__tasks,
                                             timeout=self.thread_timeout,
                                             poll_interval=self.poll_interval,
                                             logging_enabled=self.logging_enabled,
@@ -157,12 +156,12 @@ class Server:
 
         self.__logger.info(f"server has been stopped successfully")
 
-    def register_command(self, name: str, module: typing.Callable[[...], any]):
-        self.__commands[name] = Command(name=name, module=module)
-        self.__logger.info(f"command '{name}' has been registered...")
+    def register_task(self, task: Task):
+        self.__tasks[task.name] = task
+        self.__logger.info(f"task '{task.name}' has been registered...")
 
-    def unregister_command(self, name: str):
-        if name in self.__commands.keys():
-            del self.__commands[name]
+    def unregister_task(self, name: str):
+        if name in self.__tasks.keys():
+            del self.__tasks[name]
 
-            self.__logger.info(f"command '{name}' has been unregistered...")
+            self.__logger.info(f"task '{name}' has been unregistered...")

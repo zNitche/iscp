@@ -5,13 +5,13 @@ import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
 from iscep.utils.logger import Logger
-from iscep.core.command import Command
+from iscep.core.task import Task
 
 
 class RequestsHandler:
     def __init__(self,
                  connection: socket.socket,
-                 commands: dict[str, Command],
+                 tasks: dict[str, Task],
                  require_auth: bool = False,
                  auth_tokens_path: str | None = None,
                  timeout: int = 5,
@@ -19,7 +19,7 @@ class RequestsHandler:
                  logging_enabled: bool = True,
                  logs_path: str | None = None):
 
-        self.commands = commands
+        self.tasks = tasks
 
         self.require_auth = require_auth
         self.auth_tokens_path = auth_tokens_path
@@ -135,15 +135,15 @@ class RequestsHandler:
         self.__logger.info(f"executing command")
         command = packet.get_command()
 
-        self.__commands_logger.info(f"executing command: '{command.name}'"
-                                    f" with args: '{command.args}'"
-                                    f" by '{self.__token_owner}'")
-
         if command:
-            cmd_module = self.commands.get(command.name)
+            task = self.tasks.get(command.name)
 
-            if cmd_module:
-                response = cmd_module.run(**command.args)
+            if task:
+                self.__commands_logger.info(f"executing task: '{task.name}'"
+                                            f" with args: '{command.args}'"
+                                            f" by '{self.__token_owner}'")
+
+                response = task.run(command.args)
                 return Packet.get_cmd_response_packet(response)
 
         return Packet.get_error_packet(f"command not found")
