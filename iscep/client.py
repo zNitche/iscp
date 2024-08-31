@@ -88,7 +88,7 @@ class Client:
         if response is None or response.content is None:
             return None
 
-        return CommandResponse(type=response.type, response=response.content.response)
+        return CommandResponse(type=response.type, response=response.content.response, error=response.content.error)
 
     def __send_packet(self, packet: Packet) -> Packet | None:
         response = None

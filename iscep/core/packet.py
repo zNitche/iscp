@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from iscep.utils import communication
 from iscep.type_classes.packet_content import PacketContent
-from iscep.type_classes.command import Command
+from iscep.type_classes.packet_command import PacketCommand
 
 
 class PacketType(Enum):
@@ -67,11 +67,11 @@ class Packet:
 
         return size + content
 
-    def get_command(self) -> Command | None:
+    def get_command(self) -> PacketCommand | None:
         if self.content is None or self.content.command is None:
             return None
 
-        return Command(name=self.content.command, args=self.content.args)
+        return PacketCommand(name=self.content.command, args=self.content.args)
 
     def __str__(self):
         return f"{self.type.name} {self.content}"

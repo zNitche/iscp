@@ -2,6 +2,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Command:
+class PacketCommand:
     name: str
     args: dict[str, any] | None = None
