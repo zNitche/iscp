@@ -10,4 +10,4 @@ def test_cmd_echo_auth(auth_client: Client, auth_server):
     res = auth_client.send_echo("echo")
 
     assert res.type == PacketType.ECHO
-    assert res.content.body == {"echo": "echo"}
+    assert res.content.response == {"echo": "echo"}
