@@ -16,6 +16,13 @@ def auth_server():
     stop_server(server, server_thread)
 
 
+@pytest.fixture(scope="module")
+def server_w_tasks():
+    server, server_thread = start_server(register_tasks=True)
+    yield
+    stop_server(server, server_thread)
+
+
 @pytest.fixture(scope="function")
 def client():
     with get_client() as client:
