@@ -4,8 +4,8 @@ import selectors
 import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
-from iscep.core.command import Command
 from iscep.utils.logger import Logger
+from iscep.core.command import Command
 
 
 class RequestsHandler:
@@ -34,8 +34,15 @@ class RequestsHandler:
 
         self.requested_shutdown = False
 
+        self.__token_owner: str | None = None
+
         self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}",
                                enabled=logging_enabled)
+
+        self.__error_logger = Logger(logger_name=f"error_logger_{self.__thread.native_id}",
+                                     enabled=logging_enabled,
+                                     logs_path=logs_path,
+                                     logs_filename="requests_errors.log")
 
         self.__commands_logger = Logger(logger_name=f"commands_logger_{self.__thread.native_id}",
                                         enabled=logging_enabled,
@@ -57,6 +64,8 @@ class RequestsHandler:
     def __check_auth(self, packet: Packet) -> bool:
         if self.require_auth:
             token_owner, is_authenticated = self.__is_authenticated(packet)
+            self.__token_owner = token_owner
+
             if not is_authenticated:
                 self.__logger.info(f"received unauthorized packet, skipping...")
                 return False
@@ -97,7 +106,7 @@ class RequestsHandler:
                             break
 
                     except:
-                        self.__logger.exception("error while processing packet")
+                        self.__error_logger.exception("error while processing packet")
                         self.__connection.sendall(Packet.get_error_packet().dump())
 
                     last_action_time = time.time()
@@ -124,15 +133,17 @@ class RequestsHandler:
 
     def __process_cmd(self, packet: Packet) -> Packet:
         self.__logger.info(f"executing command")
-        # command = packet.get_command()
-        #
-        # if command:
-        #     cmd_module = self.commands.get(command.name)
-        #
-        #     if cmd_module:
-        #         response = cmd_module.run(**command.args)
-        #         return Packet.get_cmd_response_packet(response)
-        #
-        # return Packet.get_error_packet(f"command not found")
+        command = packet.get_command()
 
-        return Packet.get_cmd_response_packet("res")
+        self.__commands_logger.info(f"executing command: '{command.name}'"
+                                    f" with args: '{command.args}'"
+                                    f" by '{self.__token_owner}'")
+
+        if command:
+            cmd_module = self.commands.get(command.name)
+
+            if cmd_module:
+                response = cmd_module.run(**command.args)
+                return Packet.get_cmd_response_packet(response)
+
+        return Packet.get_error_packet(f"command not found")
