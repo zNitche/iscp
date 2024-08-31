@@ -1,4 +1,5 @@
 from iscep import Server
+from examples.tasks import ExampleTask
 
 
 if __name__ == "__main__":
@@ -10,6 +11,8 @@ if __name__ == "__main__":
                     ssl_cert_file="../cert.pem")
 
     try:
+        server.register_task(ExampleTask())
+
         server.run()
     except KeyboardInterrupt:
         server.stop()

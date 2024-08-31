@@ -12,9 +12,9 @@ def spawn_client():
                 auth_token=auth_token,
                 ssl_cert_file="../cert.pem") as client:
 
-        response = client.send_command("test_cmd")
-        response2 = client.send_command("test_cmd2")
-        response3 = client.send_command("test_cmd non auth", use_auth=False)
+        response = client.send_command("example_task", args={"message": "hello world"})
+        response2 = client.send_command("example_task")
+        response3 = client.send_command("example_task", use_auth=False)
 
         print(f"r1: {response}")
         print(f"r2: {response2}")

@@ -12,10 +12,10 @@ if __name__ == '__main__':
                 auth_token=auth_token,
                 ssl_cert_file="../cert.pem") as client:
 
-        response = client.send_command("test_cmd")
+        response = client.send_command("example_task", args={"message": "hello world"})
         # time.sleep(5)
-        response2 = client.send_command("test_cmd2")
-        response3 = client.send_command("test_cmd non auth", use_auth=False)
+        response2 = client.send_command("example_task")
+        response3 = client.send_command("example_task", use_auth=False)
 
         print(f"r1: {response}")
         print(f"r2: {response2}")
