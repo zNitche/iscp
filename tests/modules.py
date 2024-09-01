@@ -1,4 +1,5 @@
 import threading
+import time
 from tests import utils
 from tests.mocks.tasks import TestTask
 from iscep import Server, Client
@@ -22,7 +23,9 @@ def stop_server(server: Server, thread: threading.Thread):
     thread.join()
 
 
-def get_client(auth_enabled: bool = False) -> Client:
+def get_client(auth_enabled: bool = False, creation_delay: float = 0.3) -> Client:
+    # wait for server to start
+    time.sleep(creation_delay)
     token = utils.get_test_auth_token() if auth_enabled else None
 
     return Client(addr="127.0.0.1", port=8989, auth_token=token)
