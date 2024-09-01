@@ -129,7 +129,7 @@ class RequestsHandler:
             case PacketType.SEND_CMD:
                 return self.__process_cmd(packet)
 
-        return Packet.get_error_packet()
+        return Packet.get_error_packet(f"unknown packet type")
 
     def __process_cmd(self, packet: Packet) -> Packet:
         self.__logger.info(f"executing command")

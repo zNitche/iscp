@@ -56,7 +56,7 @@ class Packet:
         return Packet(type=PacketType.CMD_RESPONSE, content=content)
 
     def dump(self) -> bytes:
-        body = self.content.__dict__ if self.content else {}
+        body = self.content.dump() if self.content else {}
         body_buff = json.dumps(body).encode()
 
         checksum = hashlib.md5(body_buff).hexdigest().encode()

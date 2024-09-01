@@ -9,6 +9,17 @@ class PacketContent:
     error: str | None = None
     response: object | None = None
 
+    def dump(self) -> dict[str, any]:
+        res = {}
+
+        for key in self.__dict__:
+            val = getattr(self, key)
+
+            if val is not None:
+                res[key] = val
+
+        return res
+
     def __getattr__(self, item):
         return self.__dict__.get(item)
 
