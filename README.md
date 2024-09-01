@@ -6,6 +6,8 @@ To be written soon...
 
 #### Notes
 
+![tests](https://github.com/zNitche/iscep/actions/workflows/tests.yml/badge.svg)
+
 ```
 python3 tokens_management.py  --remove test
 ```
