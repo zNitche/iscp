@@ -13,3 +13,9 @@ def test_command(client: Client, server_w_tasks):
 
     assert res.type == PacketType.CMD_RESPONSE
     assert res.response == {"message": "echo hello", "numb": 1}
+
+
+def test_discovery(client: Client, server_w_tasks):
+    res = client.get_commands()
+
+    assert res == {'test_task': {'message': 'str', 'numb': 'int'}}
