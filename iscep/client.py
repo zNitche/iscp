@@ -64,7 +64,7 @@ class Client:
 
         self.__send_packet(packet)
 
-    def send_echo(self, message: str) -> Packet | None:
+    def send_echo(self, message: str) -> Packet:
         self.__logger.debug(f"sending echo...")
 
         content = PacketContent(auth_token=self.auth_token, response={"echo": message})
@@ -90,7 +90,20 @@ class Client:
 
         return CommandResponse(type=response.type, response=response.content.response, error=response.content.error)
 
-    def __send_packet(self, packet: Packet) -> Packet | None:
+    def get_commands(self, use_auth: bool = True) -> dict[str, dict[str, object]] | None:
+        self.__logger.debug(f"sending commands discover...")
+
+        auth_token = self.auth_token if use_auth else None
+        packet = Packet(type=PacketType.DISCOVER, content=PacketContent(auth_token=auth_token))
+
+        response = self.__send_packet(packet)
+
+        if response is None or response.content is None:
+            return None
+
+        return response.content.response
+
+    def __send_packet(self, packet: Packet) -> Packet:
         response = None
 
         try:

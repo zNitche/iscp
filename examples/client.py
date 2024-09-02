@@ -1,4 +1,3 @@
-import time
 import os
 from iscep import Client
 
@@ -12,11 +11,12 @@ if __name__ == '__main__':
                 auth_token=auth_token,
                 ssl_cert_file="../cert.pem") as client:
 
+        discovery = client.get_commands()
         response = client.send_command("example_task", args={"message": "hello world"})
-        # time.sleep(5)
         response2 = client.send_command("example_task")
         response3 = client.send_command("example_task", use_auth=False)
 
+        print(f"available commands: {discovery}")
         print(f"r1: {response}")
         print(f"r2: {response2}")
         print(f"r3: {response3}")

@@ -4,6 +4,7 @@ import selectors
 import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
+from iscep.type_classes.packet_content import PacketContent
 from iscep.utils.logger import Logger
 from iscep.core.task import Task
 
@@ -118,6 +119,8 @@ class RequestsHandler:
         if not self.__check_auth(packet):
             return Packet(type=PacketType.UNAUTHORIZED)
 
+        self.__commands_logger.info(f"processing packet: '{packet.type.name}' by '{self.__token_owner}'")
+
         match packet.type:
             case PacketType.CLOSE_CONNECTION:
                 self.requested_shutdown = True
@@ -125,6 +128,9 @@ class RequestsHandler:
 
             case PacketType.ECHO:
                 return packet
+
+            case PacketType.DISCOVER:
+                return self.__commands_discovery()
 
             case PacketType.SEND_CMD:
                 return self.__process_cmd(packet)
@@ -147,3 +153,11 @@ class RequestsHandler:
                 return Packet.get_cmd_response_packet(response)
 
         return Packet.get_error_packet(f"command not found")
+
+    def __commands_discovery(self) -> Packet:
+        struct = {}
+
+        for task_key in self.tasks:
+            struct[task_key] = self.tasks[task_key].get_module_args()
+
+        return Packet(type=PacketType.DISCOVER, content=PacketContent(response=struct))
