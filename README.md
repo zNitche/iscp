@@ -8,11 +8,14 @@ inter service command execution protocol
 While working on [yamcsr](https://github.com/zNitche/yamcsr) I had to find a way to call scripts
 (which are part of `yamcsr` codebase) from outside of its containerized environment (without code/volumes duplication).
 
-At first I wanted to use python built-in [socketserver](https://docs.python.org/3/library/socketserver.html),
-but when it came to expanding codebase build on it, I find it quite difficult and non-intuitive,
+Then I came up with this idea, a middleware that can handle multiple connections, has decent security
+(token authentication + connection encryption), can execute predefined command / scripts (+ get it's results) and is easy to use.
+
+At first I wanted to build it with Python [socketserver](https://docs.python.org/3/library/socketserver.html),
+but when it came to expanding codebase built on it, I find it quite difficult and non-intuitive,
 that's why I decided to build my own solution.
 
-That is how this project came to life. It is quite simple but was a nice exercise is using python sockets and multithreading.
+That is how this project came to life. It is quite simple but was a nice exercise is using Python sockets and multithreading.
 
 ### Features
 - multithreaded socket server.
