@@ -10,7 +10,7 @@ from iscep.core.task import Task
 
 class Server:
     def __init__(self,
-                 address: str = "127.0.0.1",
+                 address: str = "0.0.0.0",
                  port: int = 8989,
                  poll_interval: float = 0.5,
                  timeout: int = 5,
