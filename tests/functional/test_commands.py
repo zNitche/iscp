@@ -18,4 +18,5 @@ def test_command(client: Client, server_w_tasks):
 def test_discovery(client: Client, server_w_tasks):
     res = client.get_commands()
 
-    assert res == {'test_task': {'message': 'str', 'numb': 'int'}}
+    assert res.type == PacketType.DISCOVER
+    assert res.response == {'test_task': {'message': 'str', 'numb': 'int'}}

@@ -90,7 +90,7 @@ class Client:
 
         return CommandResponse(type=response.type, response=response.content.response, error=response.content.error)
 
-    def get_commands(self, use_auth: bool = True) -> dict[str, dict[str, object]] | None:
+    def get_commands(self, use_auth: bool = True) -> CommandResponse | None:
         self.__logger.debug(f"sending commands discover...")
 
         auth_token = self.auth_token if use_auth else None
@@ -101,9 +101,9 @@ class Client:
         if response is None or response.content is None:
             return None
 
-        return response.content.response
+        return CommandResponse(type=response.type, response=response.content.response, error=response.content.error)
 
-    def __send_packet(self, packet: Packet) -> Packet:
+    def __send_packet(self, packet: Packet) -> Packet | None:
         response = None
 
         try:
