@@ -4,39 +4,33 @@ from logging.handlers import TimedRotatingFileHandler
 
 
 class Logger:
-    def __init__(self,
-                 logs_filename: str | None = None,
-                 logs_path: str | None = None,
-                 backup_log_files_count: int = 7,
-                 debug: bool = False,
-                 logger_name: str | None = None,
-                 enabled: bool = True):
+    def __init__(self, logger_name: str | None = None):
+        self.enabled = True
+        self.debug_mode = False
 
+        self.backup_log_files_count = None
+        self.logs_path = None
+
+        self.__logger = logging.getLogger(__name__ if logger_name is None else logger_name)
+
+    def init(self,
+             debug: bool = False,
+             enabled: bool = True,
+             logs_filename: str | None = None,
+             logs_path: str | None = None,
+             backup_log_files_count: int = 7):
+
+        self.enabled = enabled
         self.debug_mode = debug
 
         self.backup_log_files_count = backup_log_files_count
-
         self.logs_path = self.__set_logs_path(logs_filename, logs_path)
-        self.__logger = logging.getLogger(__name__ if logger_name is None else logger_name)
 
         if enabled:
             self.__setup()
 
-    def __set_logs_path(self, filename: str | None, path: str | None) -> str | None:
-        if filename is None or path is None:
-            return None
-
-        if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
-
-        return os.path.join(path, filename)
-
     def __setup(self):
-        if self.debug_mode:
-            self.__logger.setLevel("DEBUG")
-        else:
-            self.__logger.setLevel("INFO")
-
+        self.__logger.setLevel("DEBUG" if self.debug_mode else "INFO")
         self.__setup_serial()
 
         if self.logs_path is not None:
@@ -71,6 +65,15 @@ class Logger:
         )
 
         return formatter
+
+    def __set_logs_path(self, filename: str | None, path: str | None) -> str | None:
+        if filename is None or path is None:
+            return None
+
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+
+        return os.path.join(path, filename)
 
     def exception(self, message: str):
         self.__logger.exception(message)

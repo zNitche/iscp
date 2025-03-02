@@ -16,9 +16,7 @@ class RequestsHandler:
                  require_auth: bool = False,
                  auth_tokens_path: str | None = None,
                  timeout: int = 5,
-                 poll_interval: float = 0.5,
-                 logging_enabled: bool = True,
-                 logs_path: str | None = None):
+                 poll_interval: float = 0.5):
 
         self.tasks = tasks
 
@@ -37,18 +35,9 @@ class RequestsHandler:
 
         self.__token_owner: str | None = None
 
-        self.__logger = Logger(logger_name=f"requests_handler_logger_{self.__thread.native_id}",
-                               enabled=logging_enabled)
-
-        self.__error_logger = Logger(logger_name=f"error_logger_{self.__thread.native_id}",
-                                     enabled=logging_enabled,
-                                     logs_path=logs_path,
-                                     logs_filename="requests_errors.log")
-
-        self.__commands_logger = Logger(logger_name=f"commands_logger_{self.__thread.native_id}",
-                                        enabled=logging_enabled,
-                                        logs_path=logs_path,
-                                        logs_filename="commands.log")
+        self.__logger = Logger(logger_name=f"requests_handler_logger.{self.__thread.native_id}")
+        self.__error_logger = Logger(logger_name=f"requests_error_logger.{self.__thread.native_id}")
+        self.__commands_logger = Logger(logger_name=f"commands_logger.{self.__thread.native_id}")
 
     def __is_authenticated(self, packet: Packet) -> tuple[str | None, bool]:
         packet_token = packet.content.auth_token

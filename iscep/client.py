@@ -27,7 +27,8 @@ class Client:
         self.__ssl_cert_file = ssl_cert_file
         self.__ssl_context: ssl.SSLContext | None = None
 
-        self.__logger = Logger(debug=debug, logger_name="client_logger")
+        self.__logger = Logger(logger_name="client_logger")
+        self.__logger.init(debug=debug)
 
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__socket.settimeout(timeout)

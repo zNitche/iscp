@@ -56,13 +56,35 @@ class Server:
 
         self.requested_shutdown = False
 
-        self.__logger = Logger(logger_name="server_logger", debug=debug, enabled=self.logging_enabled)
-        self.__access_logger = Logger(logger_name="server_access_logger",
-                                      logs_path=self.logs_path, logs_filename="access.log",
-                                      enabled=self.logging_enabled)
-        self.__error_logger = Logger(logger_name="server_error_logger",
-                                     logs_path=self.logs_path, logs_filename="error.log",
-                                     enabled=self.logging_enabled)
+        self.__logger = Logger(logger_name="server_logger")
+        self.__access_logger = Logger(logger_name="server_access_logger")
+        self.__error_logger = Logger(logger_name="server_error_logger")
+
+        self.__init_loggers()
+
+    def __init_loggers(self):
+        self.__logger.init(debug=self.debug, enabled=self.logging_enabled)
+        self.__access_logger.init(
+            logs_path=self.logs_path, logs_filename="access.log",
+            enabled=self.logging_enabled)
+        self.__error_logger.init(
+            logs_path=self.logs_path, logs_filename="error.log",
+            enabled=self.logging_enabled)
+
+        # sub loggers
+        requests_handler_logger = Logger(logger_name=f"requests_handler_logger")
+        requests_error_logger = Logger(logger_name=f"requests_error_logger")
+        commands_logger = Logger(logger_name=f"commands_logger")
+
+        requests_handler_logger.init(enabled=self.logging_enabled)
+
+        requests_error_logger.init(enabled=self.logging_enabled,
+                                   logs_path=self.logs_path,
+                                   logs_filename="requests_errors.log")
+
+        commands_logger.init(enabled=self.logging_enabled,
+                             logs_path=self.logs_path,
+                             logs_filename="commands.log")
 
     def __setup_socket(self):
         self.__setup_ssl()
@@ -93,9 +115,7 @@ class Server:
                                             connection=conn,
                                             tasks=self.__tasks,
                                             timeout=self.thread_timeout,
-                                            poll_interval=self.poll_interval,
-                                            logging_enabled=self.logging_enabled,
-                                            logs_path=self.logs_path)
+                                            poll_interval=self.poll_interval)
             handler.handle()
 
         except:
