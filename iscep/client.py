@@ -5,7 +5,7 @@ from iscep.utils import communication
 from iscep.core.packet import Packet, PacketType
 from iscep.type_classes.packet_content import PacketContent
 from iscep.type_classes.command_response import CommandResponse
-from iscep.utils.logger import Logger
+from iscep.logging.logger import Logger
 
 
 class Client:

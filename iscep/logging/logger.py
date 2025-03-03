@@ -1,17 +1,37 @@
-import logging
+from typing import Type
 import os
+import logging
 from logging.handlers import TimedRotatingFileHandler
+from iscep.logging.adapters import ThreadLoggerAdapter
 
 
 class Logger:
-    def __init__(self, logger_name: str | None = None):
+    def __init__(self,
+                 logger_name: str | None = None,
+                 logger_adapter: Type[logging.LoggerAdapter] | None = None,
+                 extra_context: dict[str, ...] | None = None):
+
         self.enabled = True
         self.debug_mode = False
 
         self.backup_log_files_count = None
         self.logs_path = None
 
-        self.__logger = logging.getLogger(__name__ if logger_name is None else logger_name)
+        self.__logger = self.__get_logger(logger_name, logger_adapter, extra_context)
+
+    @staticmethod
+    def for_thread(logger_name: str, thread_uid: str | int):
+        return Logger(logger_name=logger_name,
+                      logger_adapter=ThreadLoggerAdapter,
+                      extra_context={"thread_uid": thread_uid})
+
+    def __get_logger(self,
+                     logger_name: str,
+                     logger_adapter: Type[logging.LoggerAdapter] | None = None,
+                     extra_context: dict[str, ...] | None = None):
+
+        logger = logging.getLogger(__name__ if logger_name is None else logger_name)
+        return logger_adapter(logger, extra=extra_context) if logger_adapter else logger
 
     def init(self,
              debug: bool = False,

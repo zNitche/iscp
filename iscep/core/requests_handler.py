@@ -5,7 +5,7 @@ import time
 from iscep.utils import communication, auth
 from iscep.core.packet import Packet, PacketType
 from iscep.type_classes.packet_content import PacketContent
-from iscep.utils.logger import Logger
+from iscep.logging.logger import Logger
 from iscep.core.task import Task
 
 
@@ -35,9 +35,12 @@ class RequestsHandler:
 
         self.__token_owner: str | None = None
 
-        self.__logger = Logger(logger_name=f"requests_handler_logger.{self.__thread.native_id}")
-        self.__error_logger = Logger(logger_name=f"requests_error_logger.{self.__thread.native_id}")
-        self.__commands_logger = Logger(logger_name=f"commands_logger.{self.__thread.native_id}")
+        self.__logger = Logger.for_thread(logger_name="requests_handler_logger",
+                                          thread_uid=self.__thread.native_id)
+        self.__error_logger = Logger.for_thread(logger_name="requests_error_logger",
+                                                thread_uid=self.__thread.native_id)
+        self.__commands_logger = Logger.for_thread(logger_name="commands_logger",
+                                                   thread_uid=self.__thread.native_id)
 
     def __is_authenticated(self, packet: Packet) -> tuple[str | None, bool]:
         packet_token = packet.content.auth_token

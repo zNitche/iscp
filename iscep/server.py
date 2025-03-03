@@ -3,7 +3,7 @@ import threading
 import selectors
 import os
 import ssl
-from iscep.utils.logger import Logger
+from iscep.logging.logger import Logger
 from iscep.core.requests_handler import RequestsHandler
 from iscep.core.task import Task
 
