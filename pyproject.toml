@@ -7,7 +7,7 @@ exclude = ["examples*", "tests*"]
 
 [project]
 name = "iscep"
-version = "1.0.2"
+version = "1.0.3"
 authors = [
   { name = "zNitche" },
 ]
